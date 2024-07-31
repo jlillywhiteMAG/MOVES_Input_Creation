@@ -1,0 +1,695 @@
+# files to change 
+# rtp24_2050_pm25_m4_in
+# 2017
+# movesdb20240104
+
+# script loads incrorrect age distributions
+# dmv age distributions for all vehicles except 53 and 62
+# default age distrituions for 53 and 62
+#
+# runs pop checker using
+# TDM vmt and age distirubions
+# default MOVES VMT and populations
+#
+# replaces 53 and 62 populations 
+
+
+
+#deletes data in age profile
+delete from rtp24_2050_pm25_m4_in.sourcetypeagedistribution;
+
+# inserts Utah DMV data from 2017 for all vehicles except 53 and 62
+insert into rtp24_2050_pm25_m4_in.sourcetypeagedistribution
+SELECT sourcetypeid, yearid, ageid, agefraction 
+FROM moves4_cdm_basefiles_33.sourcetypeagedistribution_4
+where yearid = 2050
+and sourcetypeid not in (53,62);
+
+# insert MOVES4 default age distibutions for 53 and 62 
+insert into rtp24_2050_pm25_m4_in.sourcetypeagedistribution
+SELECT * FROM moves4_cdm_basefiles_33.sourcetypeagedistribution_4
+where sourcetypeid in (53,62) and yearid = 2050;
+
+
+# run population checker 
+# this script will create a new populatin for 53 and 62
+# the data used to create 53 and 62 populations is based on the
+# following inputs
+# TDM VMT and age distributions for all source types
+# MOVES4 default VMT and populations
+
+# change default moves database movesdb20240104
+# change cdm database rtp24_2050_pm25_m4_in
+# change cdm database countyid = 49049
+# change cdm yearid = 2050
+# change cdm database monthid = 1
+# change cdm database dayid = 5
+# if new population is < the existing population the
+# rtp24_2050_pm25_m4_in_pop_checker database will not be deleted
+# and the original population will be in the database
+
+
+#Population file checker # 2 HPMS VMT v3
+# AKA Pop Checker:
+# see SELECT * FROM rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_08
+# to identify new populations
+# if script does not run you will need to drop 
+# database rtp24_2050_pm25_m4_in_pop_checker
+
+Create database rtp24_2050_pm25_m4_in_pop_checker;
+
+CREATE TABLE `rtp24_2050_pm25_m4_in_pop_checker`.`sourcetypeyear` (
+  `yearID` smallint(6) NOT NULL DEFAULT 0,
+  `sourceTypeID` smallint(6) NOT NULL DEFAULT 0,
+  `salesGrowthFactor` double DEFAULT NULL,
+  `sourceTypePopulation` double DEFAULT NULL,
+  `migrationrate` double DEFAULT NULL,
+  PRIMARY KEY (`sourceTypeID`,`yearID`),
+  KEY `yearID` (`yearID`),
+  KEY `sourceTypeID` (`sourceTypeID`),
+  KEY `sourceTypeID_2` (`sourceTypeID`,`yearID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+insert into rtp24_2050_pm25_m4_in_pop_checker.sourcetypeyear
+SELECT yearid, sourcetypeid, null, pop, null 
+FROM moves4_cdm_basefiles_33.sourcetypepopulation_2022_4
+where countyid = 49049 and yearid = 2050;
+
+
+CREATE TABLE  `rtp24_2050_pm25_m4_in_pop_checker`.`vmt_calc_01` (
+  `yearID` smallint(6) NOT NULL DEFAULT '0',
+  `sourceTypeID` smallint(6) NOT NULL DEFAULT '0',
+  `salesGrowthFactor` double DEFAULT NULL,
+  `sourceTypePopulation` double DEFAULT NULL,
+  `migrationrate` double DEFAULT NULL,
+  PRIMARY KEY (`sourceTypeID`,`yearID`),
+  KEY `yearID` (`yearID`),
+  KEY `sourceTypeID` (`sourceTypeID`),
+  KEY `sourceTypeID_2` (`sourceTypeID`,`yearID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 DELAY_KEY_WRITE=1;
+
+
+insert into rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_01
+SELECT yearid, 11 sourcetypeid, null, sourceTypePopulation, null  FROM rtp24_2050_pm25_m4_in_pop_checker.sourcetypeyear CA
+where sourcetypeid = 11
+union all
+SELECT yearid, 21 sourcetypeid, null,  sum(sourceTypePopulation) as sourcedtypepopulation, null  FROM 
+rtp24_2050_pm25_m4_in_pop_checker.sourcetypeyear CA
+where sourcetypeid in (21, 31, 32)
+union all
+SELECT yearid, 31 sourcetypeid, null,  sum(sourceTypePopulation) as sourcedtypepopulation, null  FROM 
+rtp24_2050_pm25_m4_in_pop_checker.sourcetypeyear CA
+where sourcetypeid in (21, 31, 32)
+union all
+SELECT yearid, 32 sourcetypeid, null,  sum(sourceTypePopulation) as sourcedtypepopulation, null  FROM 
+rtp24_2050_pm25_m4_in_pop_checker.sourcetypeyear CA
+where sourcetypeid in (21, 31, 32)
+union all
+SELECT yearid, 41 sourcetypeid, null, sum(sourceTypePopulation) as sourcedtypepopulation, null  FROM 
+rtp24_2050_pm25_m4_in_pop_checker.sourcetypeyear CA
+where sourcetypeid in (41, 42, 43)
+union all
+SELECT yearid, 42 sourcetypeid, null, sum(sourceTypePopulation) as sourcedtypepopulation, null  FROM 
+rtp24_2050_pm25_m4_in_pop_checker.sourcetypeyear CA
+where sourcetypeid in (41, 42, 43)
+union all
+SELECT yearid, 43 sourcetypeid, null, sum(sourceTypePopulation) as sourcedtypepopulation, null  FROM
+rtp24_2050_pm25_m4_in_pop_checker.sourcetypeyear CA
+where sourcetypeid in (41, 42, 43)
+union all
+SELECT yearid, 51 sourcetypeid, null, sum(sourceTypePopulation) as sourcedtypepopulation, null  FROM 
+rtp24_2050_pm25_m4_in_pop_checker.sourcetypeyear CA
+where sourcetypeid in (51, 52, 53, 54)
+union all
+SELECT yearid, 52 sourcetypeid, null, sum(sourceTypePopulation) as sourcedtypepopulation, null  FROM 
+rtp24_2050_pm25_m4_in_pop_checker.sourcetypeyear CA
+where sourcetypeid in (51, 52, 53, 54)
+union all
+SELECT yearid, 53 sourcetypeid, null, sum(sourceTypePopulation) as sourcedtypepopulation, null  FROM 
+rtp24_2050_pm25_m4_in_pop_checker.sourcetypeyear CA
+where sourcetypeid in (51, 52, 53, 54)
+union all
+SELECT yearid, 54 sourcetypeid, null, sum(sourceTypePopulation) as sourcedtypepopulation, null  FROM 
+rtp24_2050_pm25_m4_in_pop_checker.sourcetypeyear CA
+where sourcetypeid in (51, 52, 53, 54)
+union all
+SELECT yearid, 61 sourcetypeid, null, sum(sourceTypePopulation) as sourcedtypepopulation, null  FROM 
+rtp24_2050_pm25_m4_in_pop_checker.sourcetypeyear CA
+where sourcetypeid in (61,62)
+union all
+SELECT yearid, 62 sourcetypeid, null, sum(sourceTypePopulation) as sourcedtypepopulation, null  FROM 
+rtp24_2050_pm25_m4_in_pop_checker.sourcetypeyear CA
+where sourcetypeid in (61, 62);
+
+
+CREATE TABLE  `rtp24_2050_pm25_m4_in_pop_checker`.`vmt_calc_02` (
+  `sourceTypeID` smallint(6) NOT NULL DEFAULT '0',
+  `countyID` int(11) NOT NULL DEFAULT 0,
+  `yearID` smallint(6) NOT NULL DEFAULT '0',
+  `monthID` smallint(6) NOT NULL DEFAULT '0',
+  `dayID` smallint(6) NOT NULL DEFAULT '0',
+  `ageID` smallint(6) NOT NULL DEFAULT '0',
+  `ageFraction` double DEFAULT NULL,
+  `sourceTypePopulation` double NOT NULL DEFAULT '0',
+  `HPMSVtypePopulation` double NOT NULL DEFAULT '0',
+  `sourceTypeAgePopulation` double DEFAULT NULL,
+  `HPMSVtypeID` smallint(6) NOT NULL DEFAULT '0',
+  `HPMSBaseYearVMT` double NOT NULL DEFAULT '0',
+  `relativeMAR` double NOT NULL DEFAULT '0',
+  `HPMSvehFraction` double DEFAULT NULL,
+  `FractTemp` double DEFAULT NULL,
+  PRIMARY KEY (`sourceTypeID`,`countyid`,`yearID`,`monthID`,`dayID`,`ageID`,
+  `sourceTypePopulation`,`HPMSVtypePopulation`,`HPMSVtypeID`,`HPMSBaseYearVMT`,
+`relativeMAR`),
+  KEY `sourceTypeID` (`sourceTypeID`),
+  KEY `countyID` (`countyID`),
+  KEY `yearID` (`yearID`),
+  KEY `monthID` (`monthID`),
+  KEY `dayID` (`dayID`),
+  KEY `ageID` (`ageID`),
+  KEY `sourcetypepopulation` (`sourceTypePopulation`),
+  KEY `HPMSVtypePopulation` (`HPMSVtypePopulation`),
+  KEY `HPMSVtypeID` (`HPMSVtypeID`),
+  KEY `HPMSBaseYearVMT` (`HPMSBaseYearVMT`),
+  KEY `relativeMAR` (`relativeMAR`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 DELAY_KEY_WRITE=1;
+
+
+insert into rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_02
+SELECT CA.sourcetypeid, CF.countyid, CA.yearid, CD.monthid, cd.dayid, 
+CA.ageid, CA.ageFraction, CB.sourceTypePopulation,
+CC.sourceTypePopulation as HPMSVtypePopulation,
+CA.ageFraction * CB.sourceTypePopulation as sourcetypeagepopluation, CD.HPMSVtypeID,
+CD.VMT, CE.relativeMAR, CA.ageFraction * CB.sourceTypePopulation/CC.sourceTypePopulation as HPMSvehFraction,
+CE.relativemar * ( CA.ageFraction * CB.sourceTypePopulation/CC.sourceTypePopulation) as FractTemp
+From
+rtp24_2050_pm25_m4_in.sourcetypeagedistribution CA,
+rtp24_2050_pm25_m4_in_pop_checker.sourcetypeyear CB,
+rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_01 CC,
+rtp24_2050_pm25_m4_in.hpmsvtypeday CD,
+rtp24_2050_pm25_m4_in.county CF,
+movesdb20240104.sourcetypeage CE
+where CA.sourcetypeid = CB.sourcetypeid
+and CE.ageid = CA.ageid
+and CA.sourcetypeid = CE.sourcetypeid
+and CA.sourcetypeid = CC.sourcetypeid
+and CA.yearid = CD.yearid
+and CA.sourcetypeid = 11
+and CD.HPMSVTYPEID = 10
+and CD.monthid = 1
+and CD.dayid = 5
+and CF.countyid = 49049
+
+union all
+
+SELECT CA.sourcetypeid, CF.countyid, CA.yearid, CD.monthid, cd.dayid, 
+CA.ageid, CA.ageFraction, CB.sourceTypePopulation,
+CC.sourceTypePopulation as HPMSVtypePopulation,
+CA.ageFraction * CB.sourceTypePopulation as sourcetypeagepopluation, CD.HPMSVtypeID,
+CD.VMT, CE.relativeMAR, CA.ageFraction * CB.sourceTypePopulation/CC.sourceTypePopulation as HPMSvehFraction,
+CE.relativemar * ( CA.ageFraction * CB.sourceTypePopulation/CC.sourceTypePopulation) as FractTemp
+From
+rtp24_2050_pm25_m4_in.sourcetypeagedistribution CA,
+rtp24_2050_pm25_m4_in_pop_checker.sourcetypeyear CB,
+rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_01 CC,
+rtp24_2050_pm25_m4_in.hpmsvtypeday CD,
+rtp24_2050_pm25_m4_in.county CF,
+movesdb20240104.sourcetypeage CE
+where CA.sourcetypeid = CB.sourcetypeid
+and CE.ageid = CA.ageid
+and CA.sourcetypeid = CE.sourcetypeid
+and CA.sourcetypeid = CC.sourcetypeid
+and CA.yearid = CD.yearid
+and CA.sourcetypeid = 21
+and CD.HPMSVTYPEID = 25
+and CD.monthid = 1
+and CD.dayid = 5
+and CF.countyid = 49049
+
+union all
+
+SELECT CA.sourcetypeid, CF.countyid, CA.yearid, CD.monthid, cd.dayid, 
+CA.ageid, CA.ageFraction, CB.sourceTypePopulation,
+CC.sourceTypePopulation as HPMSVtypePopulation,
+CA.ageFraction * CB.sourceTypePopulation as sourcetypeagepopluation, CD.HPMSVtypeID,
+CD.VMT, CE.relativeMAR, CA.ageFraction * CB.sourceTypePopulation/CC.sourceTypePopulation as HPMSvehFraction,
+CE.relativemar * ( CA.ageFraction * CB.sourceTypePopulation/CC.sourceTypePopulation) as FractTemp
+From
+rtp24_2050_pm25_m4_in.sourcetypeagedistribution CA,
+rtp24_2050_pm25_m4_in_pop_checker.sourcetypeyear CB,
+rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_01 CC,
+rtp24_2050_pm25_m4_in.hpmsvtypeday CD,
+rtp24_2050_pm25_m4_in.county CF,
+movesdb20240104.sourcetypeage CE
+where CA.sourcetypeid = CB.sourcetypeid
+and CE.ageid = CA.ageid
+and CA.sourcetypeid = CE.sourcetypeid
+and CA.sourcetypeid = CC.sourcetypeid
+and CA.yearid = CD.yearid
+and CA.sourcetypeid = 31
+and CD.HPMSVTYPEID = 25
+and CD.monthid = 1
+and CD.dayid = 5
+and CF.countyid = 49049
+
+union all
+
+SELECT CA.sourcetypeid, CF.countyid, CA.yearid, CD.monthid, cd.dayid, 
+CA.ageid, CA.ageFraction, CB.sourceTypePopulation,
+CC.sourceTypePopulation as HPMSVtypePopulation,
+CA.ageFraction * CB.sourceTypePopulation as sourcetypeagepopluation, CD.HPMSVtypeID,
+CD.VMT, CE.relativeMAR, CA.ageFraction * CB.sourceTypePopulation/CC.sourceTypePopulation as HPMSvehFraction,
+CE.relativemar * ( CA.ageFraction * CB.sourceTypePopulation/CC.sourceTypePopulation) as FractTemp
+From
+rtp24_2050_pm25_m4_in.sourcetypeagedistribution CA,
+rtp24_2050_pm25_m4_in_pop_checker.sourcetypeyear CB,
+rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_01 CC,
+rtp24_2050_pm25_m4_in.hpmsvtypeday CD,
+rtp24_2050_pm25_m4_in.county CF,
+movesdb20240104.sourcetypeage CE
+where CA.sourcetypeid = CB.sourcetypeid
+and CE.ageid = CA.ageid
+and CA.sourcetypeid = CE.sourcetypeid
+and CA.sourcetypeid = CC.sourcetypeid
+and CA.yearid = CD.yearid
+and CA.sourcetypeid = 32
+and CD.HPMSVTYPEID = 25
+and CD.monthid = 1
+and CD.dayid = 5
+and CF.countyid = 49049
+
+union all
+
+SELECT CA.sourcetypeid, CF.countyid, CA.yearid, CD.monthid, cd.dayid, 
+CA.ageid, CA.ageFraction, CB.sourceTypePopulation,
+CC.sourceTypePopulation as HPMSVtypePopulation,
+CA.ageFraction * CB.sourceTypePopulation as sourcetypeagepopluation, CD.HPMSVtypeID,
+CD.VMT, CE.relativeMAR, CA.ageFraction * CB.sourceTypePopulation/CC.sourceTypePopulation as HPMSvehFraction,
+CE.relativemar * ( CA.ageFraction * CB.sourceTypePopulation/CC.sourceTypePopulation) as FractTemp
+From
+rtp24_2050_pm25_m4_in.sourcetypeagedistribution CA,
+rtp24_2050_pm25_m4_in_pop_checker.sourcetypeyear CB,
+rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_01 CC,
+rtp24_2050_pm25_m4_in.hpmsvtypeday CD,
+rtp24_2050_pm25_m4_in.county CF,
+movesdb20240104.sourcetypeage CE
+where CA.sourcetypeid = CB.sourcetypeid
+and CE.ageid = CA.ageid
+and CA.sourcetypeid = CE.sourcetypeid
+and CA.sourcetypeid = CC.sourcetypeid
+and CA.yearid = CD.yearid
+and CA.sourcetypeid = 41
+and CD.HPMSVTYPEID = 40
+and CD.monthid = 1
+and CD.dayid = 5
+and CF.countyid = 49049
+
+union all
+
+SELECT CA.sourcetypeid, CF.countyid, CA.yearid, CD.monthid, cd.dayid, 
+CA.ageid, CA.ageFraction, CB.sourceTypePopulation,
+CC.sourceTypePopulation as HPMSVtypePopulation,
+CA.ageFraction * CB.sourceTypePopulation as sourcetypeagepopluation, CD.HPMSVtypeID,
+CD.VMT, CE.relativeMAR, CA.ageFraction * CB.sourceTypePopulation/CC.sourceTypePopulation as HPMSvehFraction,
+CE.relativemar * ( CA.ageFraction * CB.sourceTypePopulation/CC.sourceTypePopulation) as FractTemp
+From
+rtp24_2050_pm25_m4_in.sourcetypeagedistribution CA,
+rtp24_2050_pm25_m4_in_pop_checker.sourcetypeyear CB,
+rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_01 CC,
+rtp24_2050_pm25_m4_in.hpmsvtypeday CD,
+rtp24_2050_pm25_m4_in.county CF,
+movesdb20240104.sourcetypeage CE
+where CA.sourcetypeid = CB.sourcetypeid
+and CE.ageid = CA.ageid
+and CA.sourcetypeid = CE.sourcetypeid
+and CA.sourcetypeid = CC.sourcetypeid
+and CA.yearid = CD.yearid
+and CA.sourcetypeid = 42
+and CD.HPMSVTYPEID = 40
+and CD.monthid = 1
+and CD.dayid = 5
+and CF.countyid = 49049
+
+union all
+
+SELECT CA.sourcetypeid, CF.countyid, CA.yearid, CD.monthid, cd.dayid, 
+CA.ageid, CA.ageFraction, CB.sourceTypePopulation,
+CC.sourceTypePopulation as HPMSVtypePopulation,
+CA.ageFraction * CB.sourceTypePopulation as sourcetypeagepopluation, CD.HPMSVtypeID,
+CD.VMT, CE.relativeMAR, CA.ageFraction * CB.sourceTypePopulation/CC.sourceTypePopulation as HPMSvehFraction,
+CE.relativemar * ( CA.ageFraction * CB.sourceTypePopulation/CC.sourceTypePopulation) as FractTemp
+From
+rtp24_2050_pm25_m4_in.sourcetypeagedistribution CA,
+rtp24_2050_pm25_m4_in_pop_checker.sourcetypeyear CB,
+rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_01 CC,
+rtp24_2050_pm25_m4_in.hpmsvtypeday CD,
+rtp24_2050_pm25_m4_in.county CF,
+movesdb20240104.sourcetypeage CE
+where CA.sourcetypeid = CB.sourcetypeid
+and CE.ageid = CA.ageid
+and CA.sourcetypeid = CE.sourcetypeid
+and CA.sourcetypeid = CC.sourcetypeid
+and CA.yearid = CD.yearid
+and CA.sourcetypeid = 43
+and CD.HPMSVTYPEID = 40
+and CD.monthid = 1
+and CD.dayid = 5
+and CF.countyid = 49049
+
+union all
+
+SELECT CA.sourcetypeid, CF.countyid, CA.yearid, CD.monthid, cd.dayid, 
+CA.ageid, CA.ageFraction, CB.sourceTypePopulation,
+CC.sourceTypePopulation as HPMSVtypePopulation,
+CA.ageFraction * CB.sourceTypePopulation as sourcetypeagepopluation, CD.HPMSVtypeID,
+CD.VMT, CE.relativeMAR, CA.ageFraction * CB.sourceTypePopulation/CC.sourceTypePopulation as HPMSvehFraction,
+CE.relativemar * ( CA.ageFraction * CB.sourceTypePopulation/CC.sourceTypePopulation) as FractTemp
+From
+rtp24_2050_pm25_m4_in.sourcetypeagedistribution CA,
+rtp24_2050_pm25_m4_in_pop_checker.sourcetypeyear CB,
+rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_01 CC,
+rtp24_2050_pm25_m4_in.hpmsvtypeday CD,
+rtp24_2050_pm25_m4_in.county CF,
+movesdb20240104.sourcetypeage CE
+where CA.sourcetypeid = CB.sourcetypeid
+and CE.ageid = CA.ageid
+and CA.sourcetypeid = CE.sourcetypeid
+and CA.sourcetypeid = CC.sourcetypeid
+and CA.yearid = CD.yearid
+and CA.sourcetypeid = 51
+and CD.HPMSVTYPEID = 50
+and CD.monthid = 1
+and CD.dayid = 5
+and CF.countyid = 49049
+
+union all
+
+SELECT CA.sourcetypeid, CF.countyid, CA.yearid, CD.monthid, cd.dayid, 
+CA.ageid, CA.ageFraction, CB.sourceTypePopulation,
+CC.sourceTypePopulation as HPMSVtypePopulation,
+CA.ageFraction * CB.sourceTypePopulation as sourcetypeagepopluation, CD.HPMSVtypeID,
+CD.VMT, CE.relativeMAR, CA.ageFraction * CB.sourceTypePopulation/CC.sourceTypePopulation as HPMSvehFraction,
+CE.relativemar * ( CA.ageFraction * CB.sourceTypePopulation/CC.sourceTypePopulation) as FractTemp
+From
+rtp24_2050_pm25_m4_in.sourcetypeagedistribution CA,
+rtp24_2050_pm25_m4_in_pop_checker.sourcetypeyear CB,
+rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_01 CC,
+rtp24_2050_pm25_m4_in.hpmsvtypeday CD,
+rtp24_2050_pm25_m4_in.county CF,
+movesdb20240104.sourcetypeage CE
+where CA.sourcetypeid = CB.sourcetypeid
+and CE.ageid = CA.ageid
+and CA.sourcetypeid = CE.sourcetypeid
+and CA.sourcetypeid = CC.sourcetypeid
+and CA.yearid = CD.yearid
+and CA.sourcetypeid = 52
+and CD.HPMSVTYPEID = 50
+and CD.monthid = 1
+and CD.dayid = 5
+and CF.countyid = 49049
+
+union all
+
+SELECT CA.sourcetypeid, CF.countyid, CA.yearid, CD.monthid, cd.dayid, 
+CA.ageid, CA.ageFraction, CB.sourceTypePopulation,
+CC.sourceTypePopulation as HPMSVtypePopulation,
+CA.ageFraction * CB.sourceTypePopulation as sourcetypeagepopluation, CD.HPMSVtypeID,
+CD.VMT, CE.relativeMAR, CA.ageFraction * CB.sourceTypePopulation/CC.sourceTypePopulation as HPMSvehFraction,
+CE.relativemar * ( CA.ageFraction * CB.sourceTypePopulation/CC.sourceTypePopulation) as FractTemp
+From
+rtp24_2050_pm25_m4_in.sourcetypeagedistribution CA,
+rtp24_2050_pm25_m4_in_pop_checker.sourcetypeyear CB,
+rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_01 CC,
+rtp24_2050_pm25_m4_in.hpmsvtypeday CD,
+rtp24_2050_pm25_m4_in.county CF,
+movesdb20240104.sourcetypeage CE
+where CA.sourcetypeid = CB.sourcetypeid
+and CE.ageid = CA.ageid
+and CA.sourcetypeid = CE.sourcetypeid
+and CA.sourcetypeid = CC.sourcetypeid
+and CA.yearid = CD.yearid
+and CA.sourcetypeid = 53
+and CD.HPMSVTYPEID = 50
+and CD.monthid = 1
+and CD.dayid = 5
+and CF.countyid = 49049
+
+union all
+
+SELECT CA.sourcetypeid, CF.countyid, CA.yearid, CD.monthid, cd.dayid, 
+CA.ageid, CA.ageFraction, CB.sourceTypePopulation,
+CC.sourceTypePopulation as HPMSVtypePopulation,
+CA.ageFraction * CB.sourceTypePopulation as sourcetypeagepopluation, CD.HPMSVtypeID,
+CD.VMT, CE.relativeMAR, CA.ageFraction * CB.sourceTypePopulation/CC.sourceTypePopulation as HPMSvehFraction,
+CE.relativemar * ( CA.ageFraction * CB.sourceTypePopulation/CC.sourceTypePopulation) as FractTemp
+From
+rtp24_2050_pm25_m4_in.sourcetypeagedistribution CA,
+rtp24_2050_pm25_m4_in_pop_checker.sourcetypeyear CB,
+rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_01 CC,
+rtp24_2050_pm25_m4_in.hpmsvtypeday CD,
+rtp24_2050_pm25_m4_in.county CF,
+movesdb20240104.sourcetypeage CE
+where CA.sourcetypeid = CB.sourcetypeid
+and CE.ageid = CA.ageid
+and CA.sourcetypeid = CE.sourcetypeid
+and CA.sourcetypeid = CC.sourcetypeid
+and CA.yearid = CD.yearid
+and CA.sourcetypeid = 54
+and CD.HPMSVTYPEID = 50
+and CD.monthid = 1
+and CD.dayid = 5
+and CF.countyid = 49049
+
+union all
+
+SELECT CA.sourcetypeid, CF.countyid, CA.yearid, CD.monthid, cd.dayid, 
+CA.ageid, CA.ageFraction, CB.sourceTypePopulation,
+CC.sourceTypePopulation as HPMSVtypePopulation,
+CA.ageFraction * CB.sourceTypePopulation as sourcetypeagepopluation, CD.HPMSVtypeID,
+CD.VMT, CE.relativeMAR, CA.ageFraction * CB.sourceTypePopulation/CC.sourceTypePopulation as HPMSvehFraction,
+CE.relativemar * ( CA.ageFraction * CB.sourceTypePopulation/CC.sourceTypePopulation) as FractTemp
+From
+rtp24_2050_pm25_m4_in.sourcetypeagedistribution CA,
+rtp24_2050_pm25_m4_in_pop_checker.sourcetypeyear CB,
+rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_01 CC,
+rtp24_2050_pm25_m4_in.hpmsvtypeday CD,
+rtp24_2050_pm25_m4_in.county CF,
+movesdb20240104.sourcetypeage CE
+where CA.sourcetypeid = CB.sourcetypeid
+and CE.ageid = CA.ageid
+and CA.sourcetypeid = CE.sourcetypeid
+and CA.sourcetypeid = CC.sourcetypeid
+and CA.yearid = CD.yearid
+and CA.sourcetypeid = 61
+and CD.HPMSVTYPEID = 60
+and CD.monthid = 1
+and CD.dayid = 5
+and CF.countyid = 49049
+
+union all
+
+SELECT CA.sourcetypeid, CF.countyid, CA.yearid, CD.monthid, cd.dayid, 
+CA.ageid, CA.ageFraction, CB.sourceTypePopulation,
+CC.sourceTypePopulation as HPMSVtypePopulation,
+CA.ageFraction * CB.sourceTypePopulation as sourcetypeagepopluation, CD.HPMSVtypeID,
+CD.VMT, CE.relativeMAR, CA.ageFraction * CB.sourceTypePopulation/CC.sourceTypePopulation as HPMSvehFraction,
+CE.relativemar * ( CA.ageFraction * CB.sourceTypePopulation/CC.sourceTypePopulation) as FractTemp
+From
+rtp24_2050_pm25_m4_in.sourcetypeagedistribution CA,
+rtp24_2050_pm25_m4_in_pop_checker.sourcetypeyear CB,
+rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_01 CC,
+rtp24_2050_pm25_m4_in.hpmsvtypeday CD,
+rtp24_2050_pm25_m4_in.county CF,
+movesdb20240104.sourcetypeage CE
+where CA.sourcetypeid = CB.sourcetypeid
+and CE.ageid = CA.ageid
+and CA.sourcetypeid = CE.sourcetypeid
+and CA.sourcetypeid = CC.sourcetypeid
+and CA.yearid = CD.yearid
+and CA.sourcetypeid = 62
+and CD.HPMSVTYPEID = 60
+and CD.monthid = 1
+and CD.dayid = 5
+and CF.countyid = 49049;
+
+
+CREATE TABLE  `rtp24_2050_pm25_m4_in_pop_checker`.`vmt_calc_03` (
+  `HPMSVtypeID` smallint(6) NOT NULL DEFAULT '0',
+  `HPMSFractTemp` double NOT NULL DEFAULT '0',
+  PRIMARY KEY (`HPMSVtypeID`,`HPMSFractTemp`),
+  KEY `HPMSVtypeID` (`HPMSVtypeID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 DELAY_KEY_WRITE=1;
+
+
+insert into rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_03
+SELECT
+CA.HPMSVtypeID, sum(FractTemp) as HPMSFractTemp
+FROM rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_02 CA
+group by hpmsvtypeid;
+
+CREATE TABLE  `rtp24_2050_pm25_m4_in_pop_checker`.`vmt_calc_04` (
+  `sourceTypeID` smallint(6) NOT NULL DEFAULT '0',
+  `countyID` int(11) NOT NULL DEFAULT 0,
+  `yearID` smallint(6) NOT NULL DEFAULT '0',
+  `monthID` smallint(6) NOT NULL DEFAULT '0',
+  `dayID` smallint(6) NOT NULL DEFAULT '0',
+  `ageID` smallint(6) NOT NULL DEFAULT '0',
+  `ageFraction` double DEFAULT NULL,
+  `sourceTypePopulation` double NOT NULL DEFAULT '0',
+  `sourceTypeAgePopulation` double DEFAULT NULL,
+  `HPMSVtypeID` smallint(6) NOT NULL DEFAULT '0',
+  `HPMSBaseYearVMT` double NOT NULL DEFAULT '0',
+  `relativeMAR` double NOT NULL DEFAULT '0',
+  `HPMSvehFraction` double DEFAULT NULL,
+  `FractTemp` double DEFAULT NULL,
+  `HPMSFractTemp` double DEFAULT NULL,
+  `travelFraction` double DEFAULT NULL,
+  `vmt` float DEFAULT NULL,
+  PRIMARY KEY (`sourceTypeID`,`countyid`,`yearID`,`monthID`,`dayID`,
+  `ageID`,`sourceTypePopulation`,`HPMSVtypeID`,`HPMSBaseYearVMT`,`relativeMAR`),
+  KEY `sourceTypeID` (`sourceTypeID`),
+  KEY `countyID` (`countyID`),
+  KEY `yearID` (`yearID`),
+  KEY `monthID` (`monthID`),
+  KEY `dayID` (`dayID`),
+  KEY `ageID` (`ageID`),
+  KEY `sourcetypepopulation` (`sourceTypePopulation`),
+  KEY `HPMSVtypeID` (`HPMSVtypeID`),
+  KEY `HPMSBaseYearVMT` (`HPMSBaseYearVMT`),
+  KEY `relativeMAR` (`relativeMAR`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 DELAY_KEY_WRITE=1;
+
+
+insert into rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_04
+SELECT CA.sourcetypeid, CA.countyid, CA.yearid, CA.monthid, CA.dayid, CA.ageid, CA.agefraction, CA.sourceTypePopulation, CA.sourceTypeAgePopulation,
+CA.HPMSVtypeID, CA.HPMSBaseYearVMT, CA.relativemar, CA.HPMSvehFraction, CA.FractTemp, CB.HPMSFractTemp,
+CA.FractTemp / CB.HPMSFractTemp as travelFraction, CA.HPMSBaseYearVMT*(CA.FractTemp / CB.HPMSFractTemp) as vmt 
+FROM rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_02 CA,
+rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_03 CB
+where CA.HPMSVtypeID = CB.HPMSVtypeID
+;
+
+CREATE TABLE `rtp24_2050_pm25_m4_in_pop_checker`.`vmt_calc_05` (
+  `sourceTypeID` smallint(6) NOT NULL DEFAULT '0',
+  `countyID` int(11) NOT NULL DEFAULT 0,
+  `yearID` smallint(6) NOT NULL DEFAULT '0',
+  `monthID` smallint(6) NOT NULL DEFAULT '0',
+  `dayID` smallint(6) NOT NULL DEFAULT '0',
+  `vmt` float DEFAULT NULL,
+PRIMARY KEY (`sourceTypeID`,`countyid`,`yearID`,`monthID`,`dayID`),
+  KEY `sourceTypeID` (`sourceTypeID`),
+  KEY `countyID` (`countyID`),
+  KEY `yearID` (`yearID`),
+  KEY `monthID` (`monthID`),
+  KEY `dayID` (`dayID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 DELAY_KEY_WRITE=1;
+
+
+insert into rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_05
+SELECT sourcetypeid, countyid, yearid, monthid, dayid, sum(vmt) as vmt 
+FROM rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_04
+group by countyid, yearid, monthid, dayid, sourcetypeid;
+
+CREATE TABLE `rtp24_2050_pm25_m4_in_pop_checker`.`vmt_calc_06` (
+  `yearID` smallint(6) NOT NULL DEFAULT 0,
+  `countyID` int(11) NOT NULL DEFAULT 0,
+  `sourceTypeID` smallint(6) NOT NULL DEFAULT 0,
+  `population` double NOT NULL DEFAULT 0,
+  `vmt` double NOT NULL DEFAULT 0,
+  `popratio` float DEFAULT NULL,
+  PRIMARY KEY (`yearID`,`countyID`,`sourceTypeID`),
+  KEY `yearID` (`yearID`),
+  KEY `countyID` (`countyID`),
+  KEY `sourceTypeID` (`sourceTypeID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+
+insert into rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_06
+select bb.yearid, bb.countyid, bb.sourcetypeid, bb.activity as 'population',
+dd.activity as 'vmt', bb.activity/dd.activity as 'ratio'
+from
+(SELECT mo.yearid, mo.countyid, mo.sourcetypeid, mo.activity 
+FROM moves4_cdm_basefiles_33.moves_20230615_pop_vmt mo
+where mo.countyid = 49049 and mo.yearid = 2050
+and mo.activitytypeid = 6) as bb
+join
+(SELECT mo.yearid, mo.countyid, mo.sourcetypeid, mo.activity 
+FROM moves4_cdm_basefiles_33.moves_20230615_pop_vmt mo
+where mo.countyid = 49049 and mo.yearid = 2050
+and mo.activitytypeid = 1) as dd
+on 
+bb.yearid = dd.yearid and
+bb.countyid = dd.countyid and
+bb.sourcetypeid = dd.sourcetypeid;
+
+CREATE TABLE `rtp24_2050_pm25_m4_in_pop_checker`.`vmt_calc_07` (
+  `yearID` smallint(6) NOT NULL DEFAULT 0,
+  `sourceTypeID` smallint(6) NOT NULL DEFAULT 0,
+  `salesGrowthFactor` double DEFAULT NULL,
+  `sourceTypePopulation` double DEFAULT NULL,
+  `migrationrate` double DEFAULT NULL,
+  PRIMARY KEY (`sourceTypeID`,`yearID`),
+  KEY `yearID` (`yearID`),
+  KEY `sourceTypeID` (`sourceTypeID`),
+  KEY `sourceTypeID_2` (`sourceTypeID`,`yearID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+insert into rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_07
+SELECT yearid, sourcetypeid, 0, pop, 0
+FROM moves4_cdm_basefiles_33.sourcetypepopulation_2022_4
+where countyid = 49049 and yearid = 2050
+and sourcetypeid in (53,62);
+
+CREATE TABLE `rtp24_2050_pm25_m4_in_pop_checker`.`vmt_calc_08` (
+  `yearID` smallint(6) NOT NULL DEFAULT 0,
+  `sourceTypeID` smallint(6) NOT NULL DEFAULT 0,
+  `popratio` float DEFAULT NULL,
+  `vmt` double NOT NULL DEFAULT 0,
+  `newpop` double NOT NULL DEFAULT 0,
+  `oldpop` double NOT NULL DEFAULT 0,
+  `flag` smallint(6) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`yearID`,`sourceTypeID`),
+  KEY `yearID` (`yearID`),
+  KEY `sourceTypeID` (`sourceTypeID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+
+insert into rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_08
+select ef.yearid, ef.sourcetypeid, ef.popratio, ef.vmt,
+ef.newpop, ef.oldpop, '1'
+#ef.newpop >= ef.oldpop = 1 as flag
+from
+(select bb.yearid, bb.sourcetypeid, dd.popratio, bb.vmt,
+dd.popratio * bb.vmt as newpop, cc.sourcetypepopulation as oldpop   
+
+from
+
+(SELECT mo.yearid, mo.sourcetypeid, mo.vmt
+FROM rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_05 mo 
+where mo.sourcetypeid in (53,62)) as bb
+join
+(select mo.yearid, mo.sourcetypeid, mo.popratio
+from rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_06 mo) as dd
+join
+(select mo.yearid, mo.sourcetypeid, mo.sourcetypepopulation
+from rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_07 mo) as cc
+on
+bb.yearid = dd.yearid
+and bb.sourcetypeid = dd.sourcetypeid
+and bb.sourcetypeid = cc.sourcetypeid
+and dd.sourcetypeid = cc.sourcetypeid) as ef;
+
+
+
+# load in new pop from pop checker
+
+delete FROM rtp24_2050_pm25_m4_in.sourcetypeyear
+where sourcetypeid in(53,62);
+
+insert into  rtp24_2050_pm25_m4_in.sourcetypeyear
+SELECT yearid, sourcetypeid, 0, round(newpop,0) as newpop, 0 
+FROM rtp24_2050_pm25_m4_in_pop_checker.vmt_calc_08;
+
+
+
+

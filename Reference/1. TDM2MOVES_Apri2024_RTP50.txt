@@ -1,0 +1,1029 @@
+############################################
+###            TDM2MOVES_MySQL          ####
+###        Kip Billings & Andy Li       ####
+###           January 18, 2023          ###
+####	Modified by Shauna Mecham 2024  ###
+###       Travel Demand Model v9.0      ####
+############################################
+
+-- *******************************************
+-- 1.*** Define database name in Rows 13 & 14 & 15
+-- 2.*** Define year in Row 24 and near 706 in 3.Vehicle Population Distribution
+-- 3.*** Update TDM data file near Row 114 using rows 28-29 if desired
+
+DROP DATABASE if EXISTS `tdm2moves_mysql_2050`;
+CREATE DATABASE `tdm2moves_mysql_2050`;
+USE `tdm2moves_mysql_2050`;
+
+DROP TABLE if EXISTS `Year`;
+CREATE TABLE `year` 
+(Year_ID SMALLINT(8) NULL DEFAULT NULL);
+
+ALTER TABLE `year`
+ADD PRIMARY KEY (Year_ID);
+
+INSERT INTO `year`
+SET year_id = 2050;
+
+-- Replace Path (use forward slashes) and Filename for TDM data in CSV format near line #114
+-- 'C:/Users/smecham.MTNLAND/Desktop/TDM_SummarywithFactors_2050_v2.csv'
+
+-- *******************************************
+
+#####################################################################################
+##############    Build TDM Database  ###############################################
+#####################################################################################
+
+-- Import TDM data for Model Year, and 
+-- Create Link_ID, County_FIPS, RoadTypeID, and HPMS_Factor fields
+
+DROP TABLE if EXISTS tdm;
+CREATE TABLE `TDM` 
+	  (`Link_ID` CHAR(15) NULL DEFAULT NULL,
+		`A` mediumINT(5) NULL DEFAULT NULL,
+		`B` mediumINT(5) NULL DEFAULT NULL,
+		`FT` SMALLINT(6) NULL DEFAULT NULL,
+		`Year_ID` SMALLINT(8) NULL DEFAULT NULL,
+		`RoadTypeID` SMALLINT(6) NULL DEFAULT NULL,
+		`RoadTypeID2345` INTEGER(5) NULL DEFAULT NULL,
+		`FF_SPD` FLOAT(12) NULL DEFAULT NULL,
+		`County_FIPS` INT(10) NULL DEFAULT NULL,
+		`city_fips` INT(10) NULL DEFAULT NULL,
+		`AWDT_DY` FLOAT(12) NULL DEFAULT NULL,
+		`AADT_DY` FLOAT(12) NULL DEFAULT NULL,
+		`VMT_Jan` FLOAT(12) NULL DEFAULT NULL,
+		`VMT_Jul` FLOAT(12) NULL DEFAULT NULL,
+		`VMT_HPMS_W` FLOAT(12) NULL DEFAULT NULL,
+		`VMT_HPMS_S` FLOAT(12) NULL DEFAULT NULL,
+		`VMT_AWDT` FLOAT(12) NULL DEFAULT NULL,
+		`VMT_AADT` FLOAT(12) NULL DEFAULT NULL,
+		`FAC_JAN` FLOAT(12) NULL DEFAULT NULL,
+		`FAC_JUL` FLOAT(12) NULL DEFAULT NULL,
+		`FAC_WDAVG` FLOAT(12) NULL DEFAULT NULL,
+		`HPMS_Factor` FLOAT(12) NULL DEFAULT NULL,
+		`dist` FLOAT(12) NULL DEFAULT NULL,
+		`AM_VOL` FLOAT(12) NULL DEFAULT NULL,
+		`MD_VOL` FLOAT(12) NULL DEFAULT NULL,
+		`PM_VOL` FLOAT(12) NULL DEFAULT NULL,
+		`EV_VOL` FLOAT(12) NULL DEFAULT NULL,
+		`AM_SPD` FLOAT(12) NULL DEFAULT NULL,
+		`MD_SPD` FLOAT(12) NULL DEFAULT NULL,
+		`PM_SPD` FLOAT(12) NULL DEFAULT NULL,
+		`EV_SPD` FLOAT(12) NULL DEFAULT NULL,
+		`AM_SPD_bin` INT(10) NULL DEFAULT NULL,
+		`MD_SPD_bin` INT(10) NULL DEFAULT NULL,
+		`PM_SPD_bin` INT(10) NULL DEFAULT NULL,
+		`EV_SPD_bin` INT(10) NULL DEFAULT NULL,
+		`AM_VMT_w` FLOAT(12) NULL DEFAULT NULL,
+		`MD_VMT_w` FLOAT(12) NULL DEFAULT NULL,
+		`PM_VMT_w` FLOAT(12) NULL DEFAULT NULL,
+		`EV_VMT_w` FLOAT(12) NULL DEFAULT NULL,
+		`AM_VMT_S` FLOAT(12) NULL DEFAULT NULL,
+		`MD_VMT_S` FLOAT(12) NULL DEFAULT NULL,
+		`PM_VMT_S` FLOAT(12) NULL DEFAULT NULL,
+		`EV_VMT_S` FLOAT(12) NULL DEFAULT NULL,
+		`lanes` SMALLINT(6) NULL DEFAULT NULL,
+		`Lane_miles` FLOAT(12) NULL DEFAULT NULL,
+		`am_vc` FLOAT(12) NULL DEFAULT NULL,
+		`md_vc` FLOAT(12) NULL DEFAULT NULL,
+		`pm_vc` FLOAT(12) NULL DEFAULT NULL,
+		`ev_vc` FLOAT(12) NULL DEFAULT NULL,
+		`VMT_AM_v/c>1.0` FLOAT(12) NULL DEFAULT NULL,
+		`VMT_MD_v/c>1.0` FLOAT(12) NULL DEFAULT NULL,
+		`VMT_PM_v/c>1.0` FLOAT(12) NULL DEFAULT NULL,
+		`VMT_EV_v/c>1.0` FLOAT(12) NULL DEFAULT NULL,
+		`VMT_AM_v/c>1.2` FLOAT(12) NULL DEFAULT NULL,
+		`VMT_MD_v/c>1.2` FLOAT(12) NULL DEFAULT NULL,
+		`VMT_PM_v/c>1.2` FLOAT(12) NULL DEFAULT NULL,
+		`VMT_EV_v/c>1.2` FLOAT(12) NULL DEFAULT NULL,
+		`VMT_v/c>1.0` FLOAT(12) NULL DEFAULT NULL,
+		`VMT_v/c>1.2` FLOAT(12) NULL DEFAULT NULL,
+		`VHT_FF_SPD` FLOAT(12) NULL DEFAULT NULL,
+		`VHT_AM` FLOAT(12) NULL DEFAULT NULL,
+		`VHT_MD` FLOAT(12) NULL DEFAULT NULL,
+		`VHT_PM` FLOAT(12) NULL DEFAULT NULL,
+		`VHT_EV` FLOAT(12) NULL DEFAULT NULL,
+		`VHT` FLOAT(12) NULL DEFAULT NULL,
+		`VHT_Delay_AM` FLOAT(12) NULL DEFAULT NULL,
+		`VHT_Delay_MD` FLOAT(12) NULL DEFAULT NULL,
+		`VHT_Delay_PM` FLOAT(12) NULL DEFAULT NULL,
+		`VHT_Delay_EV` FLOAT(12) NULL DEFAULT NULL,
+		`VHT_Delay` FLOAT(12) NULL DEFAULT NULL);
+ 
+LOAD DATA LOCAL INFILE 
+'C:/Users/smecham.MTNLAND/Desktop/TDM_SummarywithFactors2050_v3.csv'
+
+INTO TABLE TDM 
+FIELDS TERMINATED BY ',' LINES TERMINATED BY '\r' IGNORE 1 LINES
+(A,B,FT,FF_SPD,County_fips,city_fips,AWDT_DY,AADT_DY,VMT_Jan,VMT_Jul,VMT_AWDT,VMT_AADT,
+FAC_JAN,FAC_JUL,FAC_WDAVG,dist,AM_VOL,MD_VOL,PM_VOL,EV_VOL,AM_SPD,MD_SPD,PM_SPD,
+EV_SPD,AM_VMT_w,MD_VMT_w,PM_VMT_w,EV_VMT_w,AM_VMT_S,MD_VMT_S,PM_VMT_S,EV_VMT_S,
+lanes,am_vc,md_vc,pm_vc,ev_vc);
+
+#Delete unnedded counties
+DELETE FROM tdm
+WHERE NOT county_fips = 49;
+
+UPDATE tdm 
+SET Link_ID = CONCAT (CAST(A AS CHAR), '_', CAST(B AS CHAR));
+
+UPDATE tdm 
+SET year_ID = (SELECT year_ID FROM `Year`);
+
+UPDATE tdm AS a, tdm2moves_parameters.road AS b 
+SET a.RoadTypeID = b.RoadType
+WHERE a.FT = b.FT;
+
+-- Add Ogden as a County
+#DROP TABLE if EXISTS tdm_OG;
+#CREATE TABLE tdm_OG SELECT * FROM tdm
+#WHERE tdm.city_fips = 55980;
+
+#UPDATE tdm_og SET tdm_og.County_FIPS = 55980;
+
+#INSERT INTO tdm SELECT * FROM tdm_og;
+
+-- Inlcude Local Roads "55" with Arterial Roads "5"
+UPDATE tdm SET RoadTypeID2345 = 4
+WHERE RoadTypeID = 4;
+
+UPDATE tdm SET RoadTypeID2345 = 5
+WHERE RoadTypeID IN (5,55);
+
+##ALTER TABLE tdm
+##RENAME COLUMN `Co_fips` `County_fips`;
+
+UPDATE tdm AS a, tdm2moves_parameters.hpms_factor_2019 AS b 
+SET a.HPMS_Factor = b.HPMSF
+WHERE a.County_FIPS = b.County_FIPS AND a.RoadTypeID = 4;
+
+UPDATE tdm AS a, tdm2moves_parameters.hpms_factor_2019 AS b 
+SET a.HPMS_Factor = b.HPMSA
+WHERE a.County_FIPS = b.County_FIPS AND a.RoadTypeID = 5;
+
+UPDATE tdm AS a, tdm2moves_parameters.hpms_factor_2019 AS b 
+SET a.HPMS_Factor = b.HPMSL
+WHERE a.County_FIPS = b.County_FIPS AND a.RoadTypeID = 55;
+
+UPDATE tdm SET VMT_HPMS_W = VMT_Jan * HPMS_Factor;
+UPDATE tdm SET VMT_HPMS_S = VMT_Jul * HPMS_Factor;
+UPDATE tdm SET VHT_FF_SPD = VMT_Jan/FF_SPD;
+UPDATE tdm SET VHT_AM = AM_VMT_w/AM_SPD;
+UPDATE tdm SET VHT_MD = MD_VMT_w/MD_SPD;
+UPDATE tdm SET VHT_PM = PM_VMT_w/PM_SPD;
+UPDATE tdm SET VHT_EV = EV_VMT_w/EV_SPD;
+UPDATE tdm SET VHT = VHT_AM + VHT_MD + VHT_PM + VHT_EV;
+UPDATE tdm SET VHT_Delay_AM = 0;
+UPDATE tdm SET VHT_Delay_MD = 0;
+UPDATE tdm SET VHT_Delay_PM = 0;
+UPDATE tdm SET VHT_Delay_EV = 0;
+UPDATE tdm SET Lane_miles = lanes * dist;
+
+UPDATE tdm SET VHT_Delay_AM = VHT_AM - AM_VMT_w/FF_SPD
+WHERE FF_SPD>AM_SPD;
+
+UPDATE tdm SET VHT_Delay_MD = VHT_MD - MD_VMT_w/FF_SPD
+WHERE FF_SPD>MD_SPD;
+
+UPDATE tdm SET VHT_Delay_PM = VHT_PM - PM_VMT_w/FF_SPD
+WHERE FF_SPD>PM_SPD;
+
+UPDATE tdm SET VHT_Delay_EV = VHT_EV - EV_VMT_w/FF_SPD
+WHERE FF_SPD>EV_SPD;
+
+UPDATE tdm SET `VMT_AM_v/c>1.0` = 0, `VMT_MD_v/c>1.0` = 0, 
+               `VMT_PM_v/c>1.0` = 0, `VMT_EV_v/c>1.0` = 0;
+
+UPDATE tdm SET `VMT_AM_v/c>1.2` = 0, `VMT_MD_v/c>1.2` = 0, 
+               `VMT_PM_v/c>1.2` = 0, `VMT_EV_v/c>1.2` = 0;
+
+UPDATE tdm SET VHT_Delay = 0;
+UPDATE tdm SET VHT_Delay = VHT_Delay_AM + VHT_Delay_MD + VHT_Delay_PM + VHT_Delay_EV;
+
+UPDATE tdm SET `VMT_AM_v/c>1.0` = AM_VMT_w WHERE am_vc > 1.0;
+UPDATE tdm SET `VMT_MD_v/c>1.0` = MD_VMT_w WHERE md_vc > 1.0;
+UPDATE tdm SET `VMT_PM_v/c>1.0` = PM_VMT_w WHERE pm_vc > 1.0;
+UPDATE tdm SET `VMT_EV_v/c>1.0` = EV_VMT_w WHERE ev_vc > 1.0;
+
+UPDATE tdm SET `VMT_AM_v/c>1.2` = AM_VMT_w WHERE am_vc > 1.2;
+UPDATE tdm SET `VMT_MD_v/c>1.2` = MD_VMT_w WHERE md_vc > 1.2;
+UPDATE tdm SET `VMT_PM_v/c>1.2` = PM_VMT_w WHERE pm_vc > 1.2;
+UPDATE tdm SET `VMT_EV_v/c>1.2` = EV_VMT_w WHERE ev_vc > 1.2;
+
+UPDATE tdm SET `VMT_v/c>1.0` =
+ (`VMT_AM_v/c>1.0`+`VMT_MD_v/c>1.0`+`VMT_PM_v/c>1.0`+`VMT_EV_v/c>1.0`);
+UPDATE tdm SET `VMT_v/c>1.2` =
+ (`VMT_AM_v/c>1.2`+`VMT_MD_v/c>1.2`+`VMT_PM_v/c>1.2`+`VMT_EV_v/c>1.2`);
+
+-- Speed Bin calculations for 
+-- Freeways, Arterials, and Local Roads (centroid connectors)
+UPDATE tdm 
+SET AM_SPD_bin = LEAST(CEILING((AM_spd+2.5)/5),16)
+WHERE RoadTypeID IN(4,5);
+
+UPDATE tdm 
+SET MD_SPD_bin = LEAST(CEILING((MD_spd+2.5)/5),16)
+WHERE RoadTypeID IN(4,5);
+
+UPDATE tdm 
+SET PM_SPD_bin = LEAST(CEILING((PM_spd+2.5)/5),16)
+WHERE RoadTypeID IN(4,5);
+
+UPDATE tdm 
+SET EV_SPD_bin = LEAST(CEILING((EV_spd+2.5)/5),16)
+WHERE RoadTypeID IN(4,5);
+
+UPDATE tdm 
+SET AM_SPD = 12.9, AM_SPD_bin = LEAST(CEILING((12.9+2.5)/5),16)
+WHERE RoadTypeID = 55;
+
+UPDATE tdm 
+SET MD_SPD = 12.9, MD_SPD_bin = LEAST(CEILING((12.9+2.5)/5),16)
+WHERE RoadTypeID = 55;
+
+UPDATE tdm 
+SET PM_SPD = 12.9, PM_SPD_bin = LEAST(CEILING((12.9+2.5)/5),16)
+WHERE RoadTypeID = 55;
+
+UPDATE tdm 
+SET EV_SPD = 12.9, EV_SPD_bin = LEAST(CEILING((12.9+2.5)/5),16)
+WHERE RoadTypeID = 55;
+
+
+#########################################################################
+###        Summarize VMT by Vehicle, County, Month, Road           ######  
+###               Factor by HPMS and VMT Mix                       ######
+#########################################################################
+
+##################################################################################
+
+-- Create VMT Totals by County
+DROP TABLE if EXISTS vmt_county;
+CREATE TABLE vmt_county
+SELECT County_FIPS, Year_ID,
+		 ROUND(SUM(VMT_Jan),0) AS VMT_Jan, 
+		 ROUND(SUM(VMT_Jul),0) AS VMT_Jul, 
+		 ROUND(SUM(VMT_HPMS_W),0) AS VMT_HPMS_W, 
+		 ROUND(SUM(VMT_HPMS_S),0) AS VMT_HPMS_S
+FROM tdm
+GROUP BY County_FIPS
+ORDER BY County_FIPS;
+
+-- Create VMT Totals by County and Road
+DROP TABLE if EXISTS vmt_county_road;
+CREATE TABLE vmt_county_road
+SELECT County_FIPS, Year_ID, RoadTypeID, roadtypeID2345, 
+       ROUND(SUM(VMT_Jan),0) AS VMT_Jan, 
+		 ROUND(SUM(VMT_Jul),0) AS VMT_Jul, 
+		 ROUND(SUM(VMT_HPMS_W),0) AS VMT_HPMS_W, 
+		 ROUND(SUM(VMT_HPMS_S),0) AS VMT_HPMS_S
+FROM tdm
+GROUP BY County_FIPS, RoadTypeID
+ORDER BY County_FIPS, RoadTypeID;
+
+-- Create VMT Totals by County, Road, and Vehicle
+
+DROP TABLE if EXISTS vmt_county_road_veh;
+CREATE TABLE vmt_county_road_veh
+SELECT * FROM vmt_county_road
+GROUP BY County_FIPS, RoadTypeID
+ORDER BY County_FIPS, RoadTypeID;
+
+ALTER TABLE vmt_county_road_veh 
+ADD Mix_11 FLOAT(12) NULL DEFAULT NULL, 
+ADD Mix_21 FLOAT(12) NULL DEFAULT NULL, 
+ADD Mix_31 FLOAT(12) NULL DEFAULT NULL, 
+ADD Mix_32 FLOAT(12) NULL DEFAULT NULL, 
+ADD Mix_41 FLOAT(12) NULL DEFAULT NULL, 
+ADD Mix_42 FLOAT(12) NULL DEFAULT NULL, 
+ADD Mix_43 FLOAT(12) NULL DEFAULT NULL, 
+ADD Mix_51 FLOAT(12) NULL DEFAULT NULL, 
+ADD Mix_52 FLOAT(12) NULL DEFAULT NULL, 
+ADD Mix_53 FLOAT(12) NULL DEFAULT NULL, 
+ADD Mix_54 FLOAT(12) NULL DEFAULT NULL, 
+ADD Mix_61 FLOAT(12) NULL DEFAULT NULL, 
+ADD Mix_62 FLOAT(12) NULL DEFAULT NULL, 
+ADD VMT_HPMS_W_11 FLOAT(12) NULL DEFAULT NULL, 
+ADD VMT_HPMS_W_21 FLOAT(12) NULL DEFAULT NULL, 
+ADD VMT_HPMS_W_31 FLOAT(12) NULL DEFAULT NULL, 
+ADD VMT_HPMS_W_32 FLOAT(12) NULL DEFAULT NULL, 
+ADD VMT_HPMS_W_41 FLOAT(12) NULL DEFAULT NULL, 
+ADD VMT_HPMS_W_42 FLOAT(12) NULL DEFAULT NULL, 
+ADD VMT_HPMS_W_43 FLOAT(12) NULL DEFAULT NULL, 
+ADD VMT_HPMS_W_51 FLOAT(12) NULL DEFAULT NULL, 
+ADD VMT_HPMS_W_52 FLOAT(12) NULL DEFAULT NULL, 
+ADD VMT_HPMS_W_53 FLOAT(12) NULL DEFAULT NULL, 
+ADD VMT_HPMS_W_54 FLOAT(12) NULL DEFAULT NULL, 
+ADD VMT_HPMS_W_61 FLOAT(12) NULL DEFAULT NULL, 
+ADD VMT_HPMS_W_62 FLOAT(12) NULL DEFAULT NULL, 
+ADD VMT_HPMS_S_11 FLOAT(12) NULL DEFAULT NULL, 
+ADD VMT_HPMS_S_21 FLOAT(12) NULL DEFAULT NULL, 
+ADD VMT_HPMS_S_31 FLOAT(12) NULL DEFAULT NULL, 
+ADD VMT_HPMS_S_32 FLOAT(12) NULL DEFAULT NULL, 
+ADD VMT_HPMS_S_41 FLOAT(12) NULL DEFAULT NULL, 
+ADD VMT_HPMS_S_42 FLOAT(12) NULL DEFAULT NULL, 
+ADD VMT_HPMS_S_43 FLOAT(12) NULL DEFAULT NULL, 
+ADD VMT_HPMS_S_51 FLOAT(12) NULL DEFAULT NULL, 
+ADD VMT_HPMS_S_52 FLOAT(12) NULL DEFAULT NULL, 
+ADD VMT_HPMS_S_53 FLOAT(12) NULL DEFAULT NULL, 
+ADD VMT_HPMS_S_54 FLOAT(12) NULL DEFAULT NULL, 
+ADD VMT_HPMS_S_61 FLOAT(12) NULL DEFAULT NULL, 
+ADD VMT_HPMS_S_62 FLOAT(12) NULL DEFAULT NULL;
+
+UPDATE vmt_county_road_veh AS a, tdm2moves_parameters.mix_2023 AS b
+SET 	a.Mix_11 = b.veh_11,
+		a.Mix_21 = b.veh_21,
+		a.Mix_31 = b.veh_31,
+		a.Mix_32 = b.veh_32,
+		a.Mix_41 = b.veh_41,
+		a.Mix_42 = b.veh_42,
+		a.Mix_43 = b.veh_43,
+		a.Mix_51 = b.veh_51,
+		a.Mix_52 = b.veh_52,
+		a.Mix_53 = b.veh_53,
+		a.Mix_54 = b.veh_54,
+		a.Mix_61 = b.veh_61,
+		a.Mix_62 = b.veh_62
+WHERE a.County_FIPS = b.County_FIPS 
+AND a.RoadTypeID = b.roadType 
+AND a.Year_ID = b.Year;
+
+UPDATE vmt_county_road_veh 
+SET 	VMT_HPMS_W_11 = VMT_HPMS_W * Mix_11,
+		VMT_HPMS_W_21 = VMT_HPMS_W * Mix_21,
+		VMT_HPMS_W_31 = VMT_HPMS_W * Mix_31,
+		VMT_HPMS_W_32 = VMT_HPMS_W * Mix_32,
+		VMT_HPMS_W_41 = VMT_HPMS_W * Mix_41,
+		VMT_HPMS_W_42 = VMT_HPMS_W * Mix_42,
+		VMT_HPMS_W_43 = VMT_HPMS_W * Mix_43,
+		VMT_HPMS_W_51 = VMT_HPMS_W * Mix_51,
+		VMT_HPMS_W_52 = VMT_HPMS_W * Mix_52,
+		VMT_HPMS_W_53 = VMT_HPMS_W * Mix_53,
+		VMT_HPMS_W_54 = VMT_HPMS_W * Mix_54,
+		VMT_HPMS_W_61 = VMT_HPMS_W * Mix_61,
+		VMT_HPMS_W_62 = VMT_HPMS_W * Mix_62,
+		VMT_HPMS_S_11 = VMT_HPMS_S * Mix_11,
+		VMT_HPMS_S_21 = VMT_HPMS_S * Mix_21,
+		VMT_HPMS_S_31 = VMT_HPMS_S * Mix_31,
+		VMT_HPMS_S_32 = VMT_HPMS_S * Mix_32,
+		VMT_HPMS_S_41 = VMT_HPMS_S * Mix_41,
+		VMT_HPMS_S_42 = VMT_HPMS_S * Mix_42,
+		VMT_HPMS_S_43 = VMT_HPMS_S * Mix_43,
+		VMT_HPMS_S_51 = VMT_HPMS_S * Mix_51,
+		VMT_HPMS_S_52 = VMT_HPMS_S * Mix_52,
+		VMT_HPMS_S_53 = VMT_HPMS_S * Mix_53,
+		VMT_HPMS_S_54 = VMT_HPMS_S * Mix_54,
+		VMT_HPMS_S_61 = VMT_HPMS_S * Mix_61,
+		VMT_HPMS_S_62 = VMT_HPMS_S * Mix_62;
+
+
+
+-- Create VMT Totals by County and Vehicle
+DROP TABLE if EXISTS vmt_county_veh;
+CREATE TABLE vmt_county_veh
+SELECT 	County_FIPS, 
+			Year_ID,
+			round(SUM(VMT_Jan),0) AS VMT_Jan, 
+			round(SUM(VMT_Jul),0) AS VMT_Jul,
+			round(SUM(VMT_HPMS_W),0) as VMT_HPMS_W,
+			round(SUM(VMT_HPMS_S),0) AS VMT_HPMS_S,
+			round(SUM(VMT_HPMS_W_11),0) AS VMT_HPMS_W_11, 
+			round(SUM(VMT_HPMS_W_21),0) AS VMT_HPMS_W_21,
+			round(SUM(VMT_HPMS_W_31),0) AS VMT_HPMS_W_31, 
+		 	round(SUM(VMT_HPMS_W_32),0) AS VMT_HPMS_W_32, 
+		 	round(SUM(VMT_HPMS_W_41),0) AS VMT_HPMS_W_41, 
+		 	round(SUM(VMT_HPMS_W_42),0) AS VMT_HPMS_W_42, 
+		 	round(SUM(VMT_HPMS_W_43),0) AS VMT_HPMS_W_43, 
+		 	round(SUM(VMT_HPMS_W_51),0) AS VMT_HPMS_W_51, 
+		 	round(SUM(VMT_HPMS_W_52),0) AS VMT_HPMS_W_52, 
+		 	round(SUM(VMT_HPMS_W_53),0) AS VMT_HPMS_W_53, 
+		 	round(SUM(VMT_HPMS_W_54),0) AS VMT_HPMS_W_54, 
+		 	round(SUM(VMT_HPMS_W_61),0) AS VMT_HPMS_W_61, 
+		 	round(SUM(VMT_HPMS_W_62),0) AS VMT_HPMS_W_62, 
+		 	round(SUM(VMT_HPMS_S_11),0) AS VMT_HPMS_S_11, 
+		 	round(SUM(VMT_HPMS_S_21),0) AS VMT_HPMS_S_21,
+		 	round(SUM(VMT_HPMS_S_31),0) AS VMT_HPMS_S_31, 
+		 	round(SUM(VMT_HPMS_S_32),0) AS VMT_HPMS_S_32, 
+		 	round(SUM(VMT_HPMS_S_41),0) AS VMT_HPMS_S_41, 
+		 	round(SUM(VMT_HPMS_S_42),0) AS VMT_HPMS_S_42, 
+		 	round(SUM(VMT_HPMS_S_43),0) AS VMT_HPMS_S_43, 
+		 	round(SUM(VMT_HPMS_S_51),0) AS VMT_HPMS_S_51, 
+		 	round(SUM(VMT_HPMS_S_52),0) AS VMT_HPMS_S_52, 
+		 	round(SUM(VMT_HPMS_S_53),0) AS VMT_HPMS_S_53, 
+		 	round(SUM(VMT_HPMS_S_54),0) AS VMT_HPMS_S_54, 
+		 	round(SUM(VMT_HPMS_S_61),0) AS VMT_HPMS_S_61, 
+			round(SUM(VMT_HPMS_S_62),0) AS VMT_HPMS_S_62
+FROM vmt_county_road_veh
+GROUP BY County_FIPS
+ORDER BY County_FIPS;
+
+
+############################################
+###          MOVES Input Files          ####
+###      1.Road Type Distribution       ####
+############################################
+
+-- CREATE MOVES lookup file for Road Distribution 
+-- for UT, WE, DA, SL Counties and Ogden
+
+DROP TABLE if EXISTS 1mv_road_dist_county;
+CREATE TABLE 1mv_road_dist_county
+SELECT * FROM tdm2moves_parameters.road_dist_county_template;
+
+UPDATE 1mv_road_dist_county AS a, `year` AS b
+SET a.Year_ID = b.Year_ID;
+
+-- VMT Totals by County and Vehicle
+
+UPDATE 1mv_road_dist_county AS a, vmt_county_veh AS b
+SET 	a.VMT_Jan_veh = b.VMT_HPMS_W_11,
+		a.VMT_Jul_veh = b.VMT_HPMS_S_11
+WHERE a.County_FIPS = b.County_FIPS
+AND 	a.sourceTypeID = 11;
+
+UPDATE 1mv_road_dist_county AS a, vmt_county_veh AS b
+SET 	a.VMT_Jan_veh = b.VMT_HPMS_W_21,
+		a.VMT_Jul_veh = b.VMT_HPMS_S_21
+WHERE a.County_FIPS = b.County_FIPS
+AND 	a.sourceTypeID = 21;
+
+UPDATE 1mv_road_dist_county AS a, vmt_county_veh AS b
+SET 	a.VMT_Jan_veh = b.VMT_HPMS_W_31,
+		a.VMT_Jul_veh = b.VMT_HPMS_S_31
+WHERE a.County_FIPS = b.County_FIPS
+AND 	a.sourceTypeID = 31;
+
+UPDATE 1mv_road_dist_county AS a, vmt_county_veh AS b
+SET 	a.VMT_Jan_veh = b.VMT_HPMS_W_32,
+		a.VMT_Jul_veh = b.VMT_HPMS_S_32
+WHERE a.County_FIPS = b.County_FIPS
+AND 	a.sourceTypeID = 32;
+
+UPDATE 1mv_road_dist_county AS a, vmt_county_veh AS b
+SET 	a.VMT_Jan_veh = b.VMT_HPMS_W_41,
+		a.VMT_Jul_veh = b.VMT_HPMS_S_41
+WHERE a.County_FIPS = b.County_FIPS
+AND 	a.sourceTypeID = 41;
+
+UPDATE 1mv_road_dist_county AS a, vmt_county_veh AS b
+SET 	a.VMT_Jan_veh = b.VMT_HPMS_W_42,
+		a.VMT_Jul_veh = b.VMT_HPMS_S_42
+WHERE a.County_FIPS = b.County_FIPS
+AND 	a.sourceTypeID = 42;
+
+UPDATE 1mv_road_dist_county AS a, vmt_county_veh AS b
+SET 	a.VMT_Jan_veh = b.VMT_HPMS_W_43,
+		a.VMT_Jul_veh = b.VMT_HPMS_S_43
+WHERE a.County_FIPS = b.County_FIPS
+AND 	a.sourceTypeID = 43;
+
+UPDATE 1mv_road_dist_county AS a, vmt_county_veh AS b
+SET 	a.VMT_Jan_veh = b.VMT_HPMS_W_51,
+		a.VMT_Jul_veh = b.VMT_HPMS_S_51
+WHERE a.County_FIPS = b.County_FIPS
+AND 	a.sourceTypeID = 51;
+
+UPDATE 1mv_road_dist_county AS a, vmt_county_veh AS b
+SET 	a.VMT_Jan_veh = b.VMT_HPMS_W_52,
+		a.VMT_Jul_veh = b.VMT_HPMS_S_52
+WHERE a.County_FIPS = b.County_FIPS
+AND 	a.sourceTypeID = 52;
+
+UPDATE 1mv_road_dist_county AS a, vmt_county_veh AS b
+SET 	a.VMT_Jan_veh = b.VMT_HPMS_W_53,
+		a.VMT_Jul_veh = b.VMT_HPMS_S_53
+WHERE a.County_FIPS = b.County_FIPS
+AND 	a.sourceTypeID = 53;
+
+UPDATE 1mv_road_dist_county AS a, vmt_county_veh AS b
+SET 	a.VMT_Jan_veh = b.VMT_HPMS_W_54,
+		a.VMT_Jul_veh = b.VMT_HPMS_S_54
+WHERE a.County_FIPS = b.County_FIPS
+AND 	a.sourceTypeID = 54;
+
+UPDATE 1mv_road_dist_county AS a, vmt_county_veh AS b
+SET 	a.VMT_Jan_veh = b.VMT_HPMS_W_61,
+		a.VMT_Jul_veh = b.VMT_HPMS_S_61
+WHERE a.County_FIPS = b.County_FIPS
+AND 	a.sourceTypeID = 61;
+
+UPDATE 1mv_road_dist_county AS a, vmt_county_veh AS b
+SET 	a.VMT_Jan_veh = b.VMT_HPMS_W_62,
+		a.VMT_Jul_veh = b.VMT_HPMS_S_62
+WHERE a.County_FIPS = b.County_FIPS
+AND 	a.sourceTypeID = 62;
+
+-- VMT Totals by County, Road, and Vehicle
+
+UPDATE 1mv_road_dist_county AS a, vmt_county_road_veh AS b
+SET 	a.VMT_Jan_veh_road = b.VMT_HPMS_W_11,
+		a.VMT_Jul_veh_road = b.VMT_HPMS_S_11
+WHERE a.roadtypeID = b.roadtypeID
+AND	a.County_FIPS = b.County_FIPS
+AND 	a.sourceTypeID = 11;
+
+UPDATE 1mv_road_dist_county AS a, vmt_county_road_veh AS b
+SET 	a.VMT_Jan_veh_road = b.VMT_HPMS_W_21,
+		a.VMT_Jul_veh_road = b.VMT_HPMS_S_21
+WHERE a.roadtypeID = b.roadtypeID
+AND	a.County_FIPS = b.County_FIPS
+AND 	a.sourceTypeID = 21;
+
+UPDATE 1mv_road_dist_county AS a, vmt_county_road_veh AS b
+SET 	a.VMT_Jan_veh_road = b.VMT_HPMS_W_31,
+		a.VMT_Jul_veh_road = b.VMT_HPMS_S_31
+WHERE a.roadtypeID = b.roadtypeID
+AND	a.County_FIPS = b.County_FIPS
+AND 	a.sourceTypeID = 31;
+
+UPDATE 1mv_road_dist_county AS a, vmt_county_road_veh AS b
+SET 	a.VMT_Jan_veh_road = b.VMT_HPMS_W_32,
+		a.VMT_Jul_veh_road = b.VMT_HPMS_S_32
+WHERE a.roadtypeID = b.roadtypeID
+AND	a.County_FIPS = b.County_FIPS
+AND 	a.sourceTypeID = 32;
+
+UPDATE 1mv_road_dist_county AS a, vmt_county_road_veh AS b
+SET 	a.VMT_Jan_veh_road = b.VMT_HPMS_W_41,
+		a.VMT_Jul_veh_road = b.VMT_HPMS_S_41
+WHERE a.roadtypeID = b.roadtypeID
+AND	a.County_FIPS = b.County_FIPS
+AND 	a.sourceTypeID = 41;
+
+UPDATE 1mv_road_dist_county AS a, vmt_county_road_veh AS b
+SET 	a.VMT_Jan_veh_road = b.VMT_HPMS_W_42,
+		a.VMT_Jul_veh_road = b.VMT_HPMS_S_42
+WHERE a.roadtypeID = b.roadtypeID
+AND	a.County_FIPS = b.County_FIPS
+AND 	a.sourceTypeID = 42;
+
+UPDATE 1mv_road_dist_county AS a, vmt_county_road_veh AS b
+SET 	a.VMT_Jan_veh_road = b.VMT_HPMS_W_43,
+		a.VMT_Jul_veh_road = b.VMT_HPMS_S_43
+WHERE a.roadtypeID = b.roadtypeID
+AND	a.County_FIPS = b.County_FIPS
+AND 	a.sourceTypeID = 43;
+
+UPDATE 1mv_road_dist_county AS a, vmt_county_road_veh AS b
+SET 	a.VMT_Jan_veh_road = b.VMT_HPMS_W_51,
+		a.VMT_Jul_veh_road = b.VMT_HPMS_S_51
+WHERE a.roadtypeID = b.roadtypeID
+AND	a.County_FIPS = b.County_FIPS
+AND 	a.sourceTypeID = 51;
+
+UPDATE 1mv_road_dist_county AS a, vmt_county_road_veh AS b
+SET 	a.VMT_Jan_veh_road = b.VMT_HPMS_W_52,
+		a.VMT_Jul_veh_road = b.VMT_HPMS_S_52
+WHERE a.roadtypeID = b.roadtypeID
+AND	a.County_FIPS = b.County_FIPS
+AND 	a.sourceTypeID = 52;
+
+UPDATE 1mv_road_dist_county AS a, vmt_county_road_veh AS b
+SET 	a.VMT_Jan_veh_road = b.VMT_HPMS_W_53,
+		a.VMT_Jul_veh_road = b.VMT_HPMS_S_53
+WHERE a.roadtypeID = b.roadtypeID
+AND	a.County_FIPS = b.County_FIPS
+AND 	a.sourceTypeID = 53;
+
+UPDATE 1mv_road_dist_county AS a, vmt_county_road_veh AS b
+SET 	a.VMT_Jan_veh_road = b.VMT_HPMS_W_54,
+		a.VMT_Jul_veh_road = b.VMT_HPMS_S_54
+WHERE a.roadtypeID = b.roadtypeID
+AND	a.County_FIPS = b.County_FIPS
+AND 	a.sourceTypeID = 54;
+
+UPDATE 1mv_road_dist_county AS a, vmt_county_road_veh AS b
+SET 	a.VMT_Jan_veh_road = b.VMT_HPMS_W_61,
+		a.VMT_Jul_veh_road = b.VMT_HPMS_S_61
+WHERE a.roadtypeID = b.roadtypeID
+AND	a.County_FIPS = b.County_FIPS
+AND 	a.sourceTypeID = 61;
+
+UPDATE 1mv_road_dist_county AS a, vmt_county_road_veh AS b
+SET 	a.VMT_Jan_veh_road = b.VMT_HPMS_W_62,
+		a.VMT_Jul_veh_road = b.VMT_HPMS_S_62
+WHERE a.roadtypeID = b.roadtypeID
+AND	a.County_FIPS = b.County_FIPS
+AND 	a.sourceTypeID = 62;
+
+-- VMT Fractions BY County, Road, AND Vehicle
+			
+UPDATE 1mv_road_dist_county 
+SET Jan_roadVMTFraction = ROUND(VMT_Jan_veh_road / VMT_Jan_veh,4),
+    Jul_roadVMTFraction = ROUND(VMT_Jul_veh_road / VMT_Jul_veh,4);
+
+-- Normalize Road Distribution to sum to 1.0000
+
+DROP TABLE if EXISTS Road_dist_not5;
+CREATE TABLE Road_dist_not5
+SELECT County_FIPS, Year_ID, sourceTypeID,
+		ROUND(SUM(Jan_roadVMTFraction),4) AS Jan_roadVMTFraction_not5,
+ 		ROUND(SUM(Jul_roadVMTFraction),4) AS Jul_roadVMTFraction_not5
+FROM 1mv_road_dist_county
+WHERE roadTypeID IN (4,55)
+GROUP BY County_FIPS, sourceTypeID;
+
+ALTER TABLE 1mv_road_dist_county
+ADD Jan_road_not5 FLOAT(12) NULL DEFAULT NULL, 
+ADD Jul_road_not5 FLOAT(12) NULL DEFAULT NULL;
+
+UPDATE 1mv_road_dist_county AS a, road_dist_not5 AS b 
+SET 	a.Jan_road_not5 = b.Jan_roadVMTFraction_not5,
+		a.Jul_road_not5 = b.Jul_roadVMTFraction_not5
+WHERE a.County_FIPS = b.County_FIPS
+AND 	a.sourceTypeID = b.sourceTypeID
+AND 	a.roadTypeID = 5;
+	
+UPDATE 1mv_road_dist_county
+SET 	Jan_roadVMTFraction = 1 - Jan_road_not5,
+		Jul_roadVMTFraction = 1 - Jul_road_not5
+		WHERE roadTypeID = 5;
+		
+#Eliminate loading errors for nulls in MOVES#
+UPDATE 1mv_road_dist_county SET Jan_roadVMTFraction=0 WHERE Jan_roadVMTFraction is NULL;
+UPDATE 1mv_road_dist_county SET Jul_roadVMTFraction=0 WHERE Jan_roadVMTFraction is NULL;
+		
+############################################
+###         MOVES Input Files            ###
+###  2.VMT by Vehicle Type Distribution  ###
+############################################
+-- CREATE MOVES lookup file for VMT by Vehicle 
+-- for WE, DA, SL Counties; and Ogden
+
+DROP TABLE if EXISTS 2mv_VMTbyveh_dist_county;
+CREATE TABLE 2mv_VMTbyveh_dist_county
+SELECT * FROM tdm2moves_parameters.vmtbyveh_dist_template;
+
+UPDATE 2mv_vmtbyveh_dist_county AS a, `year` AS b
+SET a.yearID = b.Year_ID;
+
+UPDATE 2mv_vmtbyveh_dist_county AS a, vmt_county_veh AS b
+SET a.HPMS_VMT_W = b.VMT_HPMS_W_11, a.HPMS_VMT_S = b.VMT_HPMS_S_11
+WHERE a.County_FIPS = b.County_FIPS 
+AND a.HPMSVtypeID = 10;
+
+UPDATE 2mv_vmtbyveh_dist_county AS a, vmt_county_veh AS b
+SET 	a.HPMS_VMT_W = b.VMT_HPMS_W_21 + b.VMT_HPMS_W_31 + b.VMT_HPMS_W_32,
+		a.HPMS_VMT_S = b.VMT_HPMS_S_21 + b.VMT_HPMS_S_31 + b.VMT_HPMS_S_32
+WHERE a.County_FIPS = b.County_FIPS 
+AND a.HPMSVtypeID = 25;
+
+UPDATE 2mv_vmtbyveh_dist_county AS a, vmt_county_veh AS b
+SET 	a.HPMS_VMT_W = b.VMT_HPMS_W_41 + b.VMT_HPMS_W_42 + b.VMT_HPMS_W_43,
+	 	a.HPMS_VMT_S = b.VMT_HPMS_S_41 + b.VMT_HPMS_S_42 + b.VMT_HPMS_S_43
+WHERE a.County_FIPS = b.County_FIPS 
+AND a.HPMSVtypeID = 40;
+
+UPDATE 2mv_vmtbyveh_dist_county AS a, vmt_county_veh AS b
+SET 	a.HPMS_VMT_W = 
+		 b.VMT_HPMS_W_51 + b.VMT_HPMS_W_52 + b.VMT_HPMS_W_53 + b.VMT_HPMS_W_54,
+ 		a.HPMS_VMT_S = 
+		 b.VMT_HPMS_S_51 + b.VMT_HPMS_S_52 + b.VMT_HPMS_S_53 + b.VMT_HPMS_S_54
+WHERE a.County_FIPS = b.County_FIPS 
+AND a.HPMSVtypeID = 50;
+
+UPDATE 2mv_vmtbyveh_dist_county AS a, vmt_county_veh AS b
+SET 	a.HPMS_VMT_W = b.VMT_HPMS_W_61 + b.VMT_HPMS_W_62,
+ 		a.HPMS_VMT_S = b.VMT_HPMS_S_61 + b.VMT_HPMS_S_62
+WHERE a.County_FIPS = b.County_FIPS 
+AND a.HPMSVtypeID = 60;
+			
+
+############################################
+###         MOVES Input Files           ####
+###  3.Vehicle Population Distribution  ####
+###   xx Using DAQ SourceTypeYear xx    ####
+############################################
+
+-- CREATE MOVES lookup file for Vehicle Population 
+-- from VMT estimate for WE, DA, and SL Counties
+
+#DROP TABLE if EXISTS 3mv_vehpop_dist_county;
+#CREATE TABLE 3mv_vehpop_dist_county
+#SELECT * FROM tdm2moves_parameters.vehpop_dist_template;
+
+#UPDATE 3mv_vehpop_dist_county AS a, `year` AS b
+#SET a.yearID = b.Year_ID;
+
+#DROP TABLE if EXISTS sourcetypepopulation_2022_4_cdm_33;
+#CREATE TABLE sourcetypepopulation_2022_4_cdm_33
+#SELECT * FROM moves4_cdm_basefiles_33.sourcetypepopulation_2022_4
+#WHERE countyid = 49049 AND yearID = (SELECT year_ID FROM `Year`);
+
+#ALTER TABLE sourcetypepopulation_2022_4_cdm_33 
+#ADD `County_FIPS` INT(10) NOT NULL DEFAULT '0';
+
+#UPDATE sourcetypepopulation_2022_4_cdm_33
+#SET 	County_FIPS = 49
+#WHERE sourcetypepopulation_2022_4_cdm_33.countyid IN (49049);
+
+#UPDATE 3mv_vehpop_dist_county AS a, sourcetypepopulation_2022_4_cdm_33 AS b 
+#SET a.veh_pop_factor = b.pop
+#WHERE a.County_FIPS = b.County_FIPS 
+#AND a.SourceTypeID = b. SourceTypeID;
+
+#UPDATE 3mv_vehpop_dist_county AS a, vmt_county_veh AS b
+#SET a.HPMS_VMT_W = b.VMT_HPMS_W
+#WHERE a.County_FIPS = b.County_FIPS;
+
+#UPDATE 3mv_vehpop_dist_county 
+#SET sourceTypePopulation = ROUND(veh_pop_factor * HPMS_VMT_W / 1000000,0);
+
+############################################
+###           MOVES Input Files         ####
+###        4. Speed Distribution        ####
+############################################
+
+-- Create VHT Totals by County and Time Period (AM, MD, PM, EV)
+DROP TABLE if EXISTS vht_period_county;
+CREATE TABLE vht_period_county
+SELECT 	County_FIPS, RoadTypeID2345, ROUND(SUM(VHT_AM),0) AS VHT_AM, ROUND(SUM(VHT_MD),0) AS VHT_MD, ROUND(SUM(VHT_PM),0) AS VHT_PM, ROUND(SUM(VHT_EV),0) AS VHT_EV
+FROM tdm
+GROUP BY County_FIPS, RoadTypeID2345;
+
+-- Create VHT Totals by County, Speed Bin, and Time Period (AM, MD, PM, EV)
+DROP TABLE if EXISTS VHT_bin_AM_county;
+CREATE TABLE VHT_bin_AM_county
+SELECT County_FIPS, RoadTypeID2345, AM_SPD_bin, ROUND(SUM(VHT_AM),2) AS VHT_AM
+FROM tdm
+GROUP BY County_FIPS, RoadTypeID2345, AM_SPD_bin
+ORDER BY County_FIPS, RoadTypeID2345;
+DROP TABLE if EXISTS VHT_bin_MD_county;
+CREATE TABLE VHT_bin_MD_county
+SELECT County_FIPS, RoadTypeID2345, MD_SPD_bin, ROUND(SUM(VHT_MD),2) AS VHT_MD
+FROM tdm
+GROUP BY County_FIPS, RoadTypeID2345, MD_SPD_bin
+ORDER BY County_FIPS, RoadTypeID2345;
+DROP TABLE if EXISTS VHT_bin_PM_county;
+CREATE TABLE VHT_bin_PM_county
+SELECT County_FIPS, RoadTypeID2345, PM_SPD_bin, ROUND(SUM(VHT_PM),2) AS VHT_PM
+FROM tdm
+GROUP BY County_FIPS, RoadTypeID2345, PM_SPD_bin
+ORDER BY County_FIPS, RoadTypeID2345;
+DROP TABLE if EXISTS VHT_bin_EV_county;
+CREATE TABLE VHT_bin_EV_county
+SELECT County_FIPS, RoadTypeID2345, EV_SPD_bin, ROUND(SUM(VHT_EV),2) AS VHT_EV
+FROM tdm
+GROUP BY County_FIPS, RoadTypeID2345, EV_SPD_bin
+ORDER BY County_FIPS, RoadTypeID2345;
+
+-- Create Speed Distribution by County, Road, Time Period, and Speed Bin
+DROP TABLE if EXISTS 4mv_speed_dist_county;
+CREATE TABLE 4mv_speed_dist_county
+SELECT *
+FROM tdm2moves_parameters.speed_dist_county_template;
+
+-- Insert VHT totals by County, Road Type, Speed Bin, and Time Period
+UPDATE 4mv_speed_dist_county AS a, VHT_bin_AM_county AS b 
+SET 	a.VHT_bin_W = b.VHT_AM, 
+		a.VHT_bin_S = b.VHT_AM
+WHERE a.avgSpeedBinID = b.AM_SPD_bin 
+AND a.County_FIPS = b.County_FIPS 
+AND a.roadTypeID2345 = b.RoadTypeID2345
+AND a.Period = "AM";
+
+UPDATE 4mv_speed_dist_county AS a, VHT_bin_MD_county AS b 
+SET 	a.VHT_bin_W = b.VHT_MD, 
+		a.VHT_bin_S = b.VHT_MD
+WHERE a.avgSpeedBinID = b.MD_SPD_bin 
+AND a.County_FIPS = b.County_FIPS 
+AND a.roadTypeID2345 = b.RoadTypeID2345
+AND a.Period = "MD";
+
+UPDATE 4mv_speed_dist_county AS a, vht_bin_pm_county AS b 
+SET 	a.VHT_bin_W = b.VHT_PM, 
+		a.VHT_bin_S = b.VHT_PM
+WHERE a.avgSpeedBinID = b.PM_SPD_bin 
+AND a.County_FIPS = b.County_FIPS 
+AND a.roadTypeID2345 = b.RoadTypeID2345
+AND a.Period = "PM";
+
+UPDATE 4mv_speed_dist_county AS a, vht_bin_ev_county AS b 
+SET 	a.VHT_bin_W = b.VHT_EV, 
+		a.VHT_bin_S = b.VHT_EV
+WHERE a.avgSpeedBinID = b.ev_SPD_bin 
+AND a.County_FIPS = b.County_FIPS 
+AND a.roadTypeID2345 = b.RoadTypeID2345
+AND a.Period = "EV";
+
+
+-- Insert VHT totals by County, Road Type, and Time Period
+UPDATE 4mv_speed_dist_county AS a, vht_period_county AS b 
+SET 	a.VHT_Period_W = b.VHT_AM, 
+		a.VHT_Period_S = b.VHT_AM
+WHERE a.County_FIPS = b.County_FIPS 
+AND 	a.roadTypeID2345 = b.RoadTypeID2345
+AND 	a.Period = "AM";
+
+UPDATE 4mv_speed_dist_county AS a, vht_period_county AS b 
+SET 	a.VHT_Period_W = b.VHT_MD, 
+		a.VHT_Period_S = b.VHT_MD
+WHERE a.County_FIPS = b.County_FIPS 
+AND 	a.roadTypeID2345 = b.RoadTypeID2345
+AND 	a.Period = "MD";
+
+UPDATE 4mv_speed_dist_county AS a, vht_period_county AS b 
+SET 	a.VHT_Period_W = b.VHT_PM, 
+		a.VHT_Period_S = b.VHT_PM
+WHERE a.County_FIPS = b.County_FIPS 
+AND 	a.roadTypeID2345 = b.RoadTypeID2345
+AND 	a.Period = "PM";
+
+UPDATE 4mv_speed_dist_county AS a, vht_period_county AS b 
+SET 	a.VHT_Period_W = b.VHT_EV, 
+		a.VHT_Period_S = b.VHT_EV
+WHERE a.County_FIPS = b.County_FIPS 
+AND 	a.roadTypeID2345 = b.RoadTypeID2345
+AND 	a.Period = "EV";
+
+-- Calculate Speed Fractions
+
+UPDATE 4mv_speed_dist_county
+SET 	avgSpeedFraction_w = ROUND(VHT_bin_W/VHT_Period_W,4),
+		avgSpeedFraction_s = ROUND(VHT_bin_S/VHT_Period_S,4);
+		
+UPDATE 4mv_speed_dist_county
+SET 	avgSpeedFraction_w = 0, avgSpeedFraction_s = 0
+WHERE 4mv_speed_dist_county.roadTypeID2345 IN (2,3);
+
+UPDATE 4mv_speed_dist_county
+SET 	avgSpeedFraction_w = 1, avgSpeedFraction_s = 1
+WHERE 4mv_speed_dist_county.roadTypeID2345 IN (2,3) AND avgSpeedBinID = 16;
+		
+-- Normalize Speed Distribution to sum to 1.0000
+
+DROP TABLE if EXISTS Speed_dist_rawsum;
+
+CREATE TABLE Speed_dist_rawsum
+SELECT County_FIPS, sourceTypeID, roadTypeID2345, hourDayID,
+ROUND(SUM(avgSpeedFraction_w),7) AS SpeedFrac_w_not_1,
+ROUND(SUM(avgSpeedFraction_s),7) AS SpeedFrac_s_not_1
+FROM 4mv_speed_dist_county
+GROUP BY County_FIPS, sourceTypeID, roadTypeID2345, hourDayID;
+
+UPDATE speed_dist_rawsum
+SET SpeedFrac_w_not_1 = 0 WHERE SpeedFrac_w_not_1 IS NULL;
+ 
+UPDATE speed_dist_rawsum
+SET SpeedFrac_s_not_1 = 0 WHERE SpeedFrac_s_not_1 IS NULL;
+
+ALTER TABLE 4mv_speed_dist_county
+ADD SpeedFrac_w_not_1 FLOAT(12) NULL DEFAULT NULL,
+ADD SpeedFrac_s_not_1 FLOAT(12) NULL DEFAULT NULL;
+
+FLUSH TABLES;
+
+CREATE INDEX `index_speed2`
+ON speed_dist_rawsum (County_FIPS,roadTypeID2345,hourDayID);
+
+UPDATE 4mv_speed_dist_county AS a, speed_dist_rawsum AS b
+SET a.SpeedFrac_s_not_1 = b.SpeedFrac_s_not_1,
+a.SpeedFrac_w_not_1 = b.SpeedFrac_w_not_1
+WHERE a.County_FIPS = b.County_FIPS
+AND a.roadTypeID2345 = b.roadTypeID2345
+AND a.hourDayID = b.hourDayID;
+
+UPDATE 4mv_speed_dist_county
+SET avgSpeedFraction_w = avgSpeedFraction_w/SpeedFrac_w_not_1,
+avgSpeedFraction_s = avgSpeedFraction_s/SpeedFrac_s_not_1;
+
+UPDATE 4mv_speed_dist_county
+SET avgSpeedFraction_w = 0 WHERE avgSpeedFraction_w IS NULL;
+ 
+UPDATE 4mv_speed_dist_county
+SET avgSpeedFraction_s = 0 WHERE avgSpeedFraction_s IS NULL;
+
+DROP TABLE if EXISTS Speed_dist_newsum;
+CREATE TABLE Speed_dist_newsum
+SELECT County_FIPS, sourceTypeID, roadTypeID2345, hourDayID,
+ROUND(SUM(avgSpeedFraction_w),7) AS SpeedFrac_w_not_1,
+ROUND(SUM(avgSpeedFraction_s),7) AS SpeedFrac_s_not_1
+FROM 4mv_speed_dist_county
+GROUP BY County_FIPS, sourceTypeID, roadTypeID2345, hourDayID;
+		
+###########################################################################
+######          TDM SUMMARY            ####################################
+######   Create TDM Summary Report     ####################################
+###########################################################################
+
+DROP TABLE if EXISTS _TDM_Summary_Temp;
+CREATE TABLE _TDM_Summary_Temp
+SELECT County_FIPS, RoadTypeID, RoadTypeID2345, 
+		 ROUND(SUM(EV_VMT_w),0) AS `VMT_W_EV`, 
+		 ROUND(SUM(PM_VMT_w),0) AS `VMT_W_PM`, 
+		 ROUND(SUM(MD_VMT_w),0) AS `VMT_W_MD`, 
+		 ROUND(SUM(AM_VMT_w),0) AS `VMT_W_AM`, 
+		 ROUND(SUM(EV_VMT_S),0) AS `VMT_S_EV`, 
+		 ROUND(SUM(PM_VMT_S),0) AS `VMT_S_PM`, 
+		 ROUND(SUM(MD_VMT_S),0) AS `VMT_S_MD`, 
+		 ROUND(SUM(AM_VMT_S),0) AS `VMT_S_AM`, 
+		 ROUND(SUM(VMT_Jan),0) AS `VMT_Model_W`, 
+		 ROUND(SUM(VMT_Jul),0) AS `VMT_Model_S`, 
+		 ROUND(SUM(VMT_HPMS_W),0) AS `VMT_HPMS_W`, 
+		 ROUND(SUM(VMT_HPMS_S),0) AS `VMT_HPMS_S`, 
+		 ROUND(AVG(HPMS_Factor),4) AS HPMS_Factor, 
+		 ROUND(SUM(Lane_miles),0) AS `Lane_Miles`, 
+		 ROUND(SUM(EV_VMT_w/EV_SPD),0) AS `VHT_W_EV`, 
+		 ROUND(SUM(PM_VMT_w/PM_SPD),0) AS `VHT_W_PM`, 
+		 ROUND(SUM(MD_VMT_w/MD_SPD),0) AS `VHT_W_MD`, 
+		 ROUND(SUM(AM_VMT_w/AM_SPD),0) AS `VHT_W_AM`, 
+		 ROUND(SUM(EV_VMT_s/EV_SPD),0) AS `VHT_s_EV`, 
+		 ROUND(SUM(PM_VMT_s/PM_SPD),0) AS `VHT_s_PM`, 
+		 ROUND(SUM(MD_VMT_s/MD_SPD),0) AS `VHT_s_MD`, 
+		 ROUND(SUM(AM_VMT_s/AM_SPD),0) AS `VHT_s_AM`, 
+		 ROUND(SUM(AM_VMT_w/FF_SPD),0) AS `VHT_FF_AM`, 
+		 ROUND(SUM(MD_VMT_w/FF_SPD),0) AS `VHT_FF_MD`, 
+		 ROUND(SUM(PM_VMT_w/FF_SPD),0) AS `VHT_FF_PM`, 
+		 ROUND(SUM(EV_VMT_w/FF_SPD),0) AS `VHT_FF_EV`, 
+		 ROUND(SUM(VHT),0) AS `VHT`, 
+		 ROUND(SUM(VHT_Delay_AM),0) AS Delay_AM, 
+		 ROUND(SUM(VHT_Delay_MD),0) AS Delay_MD, 
+		 ROUND(SUM(VHT_Delay_PM),0) AS Delay_PM, 
+		 ROUND(SUM(VHT_Delay_EV),0) AS Delay_EV, 
+		 ROUND(SUM(VHT_Delay),0) AS VHT_Delay, 
+		 ROUND(SUM(`VMT_V/C>1.0`),0) AS `VMT_V/C>1.0`, 
+		 ROUND(SUM(`VMT_V/C>1.2`),0) AS `VMT_V/C>1.2`
+FROM tdm
+GROUP BY County_FIPS, RoadTypeID
+ORDER BY County_FIPS, RoadTypeID; 
+
+ALTER TABLE _tdm_summary_temp 
+ADD road VARCHAR(80) AFTER County_FIPS, 
+ADD `Area` VARCHAR(80) AFTER County_FIPS, 
+ADD `Year` SMALLINT(6) NOT NULL AFTER County_FIPS,
+ADD Pct_Delay FLOAT(11, 3), 
+ADD `Pct_V/C>1.0` FLOAT(11, 3), 
+ADD `Pct_V/C>1.2` FLOAT(11, 3), 
+ADD Speed_AM_W FLOAT(11, 1), 
+ADD Speed_PM_W FLOAT(11, 1), 
+ADD Speed_EV_W FLOAT(11, 1);
+
+
+UPDATE _tdm_summary_temp 
+SET 
+	Pct_Delay = VHT_Delay / VHT,
+	`Pct_V/C>1.0` = `VMT_V/C>1.0` / (VMT_W_EV+VMT_W_PM+VMT_W_MD+VMT_W_AM),
+	`Pct_V/C>1.2` = `VMT_V/C>1.2` / (VMT_W_EV+VMT_W_PM+VMT_W_MD+VMT_W_AM),
+	Speed_AM_W = VMT_W_AM / VHT_W_AM,
+	Speed_PM_W = VMT_W_PM / VHT_W_PM,
+	Speed_EV_W = VMT_W_EV / VHT_W_EV,
+	`Year` = (SELECT `Year_ID` FROM `Year`);
+
+UPDATE _tdm_summary_temp SET road = 'Freeway'
+WHERE RoadTypeID2345 = 4;
+UPDATE _tdm_summary_temp SET road = 'Arterial'
+WHERE RoadTypeID2345 = 5;
+
+UPDATE _tdm_summary_temp AS a, tdm2moves_parameters.county AS b 
+SET a.`Area` = b.GeoID_text
+WHERE a.County_FIPS = b.County_FIPS;
+				
+#####################################################
+############   Create Summary Table   ###############
+####### SummaryA: Freeways, Arterials, Locals  ######
+## SummaryB: FreewaYS, Arterials & Local Combined  ##
+#####################################################
+
+DROP TABLE if EXISTS _TDM_Summary_AFL;
+CREATE TABLE _TDM_Summary_AFL
+SELECT   `Area`, 
+			`Year`, 
+			County_FIPS, 
+			Road, 
+			RoadTypeID, 
+			`Lane_Miles`, 
+			VMT_Model_W, 
+			VMT_Model_S, 
+			HPMS_Factor, 
+			VMT_HPMS_W, 
+			VMT_HPMS_S, 
+			Speed_AM_W, 
+			Speed_PM_W, 
+			Speed_EV_W, 
+			VHT_Delay, 
+			Pct_Delay, 
+			`Pct_V/C>1.0`, 
+			`Pct_V/C>1.2`
+FROM _tdm_summary_temp
+GROUP BY County_FIPS, RoadTypeID
+ORDER BY County_FIPS, RoadTypeID; 
+
+DROP TABLE if EXISTS _TDM_Summary_AF;
+CREATE TABLE _TDM_Summary_AF
+SELECT `Area`, `Year`, County_FIPS, Road, 
+		 ROUND(SUM(Lane_miles),0) AS `Lane_Miles`, 
+		 ROUND(SUM(VMT_Model_W),0) AS VMT_Model_W, 
+		 ROUND(SUM(VMT_Model_S),0) AS VMT_Model_S, 
+		 SUM(VMT_HPMS_W)/ SUM(VMT_Model_W) AS HPMS_Factor_net, 
+		 ROUND(SUM(VMT_HPMS_W),0) AS VMT_HPMS_W, 
+		 ROUND(SUM(VMT_HPMS_S),0) AS VMT_HPMS_S, 
+		 ROUND(SUM(VMT_W_AM)/ SUM(VHT_W_AM),1) AS Speed_AM_W, 
+		 ROUND(SUM(VMT_W_PM)/ SUM(VHT_W_PM),1) AS Speed_PM_W, 
+		 ROUND(SUM(VMT_W_EV)/ SUM(VHT_W_EV),1) AS Speed_EV_W, 
+		 ROUND(SUM(VHT_Delay),0) AS VHT_Delay, 
+		 ROUND(SUM(VHT_Delay)/ SUM(VHT),3) AS Pct_Delay, 
+		 ROUND(SUM(`VMT_V/C>1.0`)/ SUM(VMT_HPMS_W),3) AS `Pct_V/C>1.0`, 
+		 ROUND(SUM(`VMT_V/C>1.2`)/ SUM(VMT_HPMS_W),3) AS `Pct_V/C>1.2`
+FROM _tdm_summary_temp
+GROUP BY County_FIPS, Road
+ORDER BY County_FIPS, Road; 

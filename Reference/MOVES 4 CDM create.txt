@@ -1,0 +1,446 @@
+
+#####Creates an input database. Use DAQ Load scripts to enter DAQ data.#####
+CREATE DATABASE uc26_o3_m4_SIP_in;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`auditlog` (
+  `whenHappened` datetime NOT NULL,
+  `importerName` varchar(100) NOT NULL,
+  `briefDescription` varchar(100) DEFAULT NULL,
+  `fullDescription` varchar(4096) DEFAULT NULL,
+  KEY `logByDate` (`whenHappened`),
+  KEY `logByImporter` (`importerName`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`avft` (
+  `sourceTypeID` smallint(6) NOT NULL,
+  `modelYearID` smallint(6) NOT NULL,
+  `fuelTypeID` smallint(6) NOT NULL,
+  `engTechID` smallint(6) NOT NULL,
+  `fuelEngFraction` double NOT NULL,
+  PRIMARY KEY (`sourceTypeID`,`modelYearID`,`fuelTypeID`,`engTechID`),
+  KEY `sourceTypeID` (`sourceTypeID`),
+  KEY `modelYearID` (`modelYearID`),
+  KEY `fuelTypeID` (`fuelTypeID`),
+  KEY `engTechID` (`engTechID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`avgspeeddistribution` (
+  `sourceTypeID` smallint(6) NOT NULL DEFAULT 0,
+  `roadTypeID` smallint(6) NOT NULL DEFAULT 0,
+  `hourDayID` smallint(6) NOT NULL DEFAULT 0,
+  `avgSpeedBinID` smallint(6) NOT NULL DEFAULT 0,
+  `avgSpeedFraction` float DEFAULT NULL,
+  PRIMARY KEY (`avgSpeedBinID`,`hourDayID`,`roadTypeID`,`sourceTypeID`),
+  KEY `sourceTypeID` (`sourceTypeID`),
+  KEY `roadTypeID` (`roadTypeID`),
+  KEY `hourDayID` (`hourDayID`),
+  KEY `avgSpeedBinID` (`avgSpeedBinID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`county` (
+  `countyID` int(11) NOT NULL DEFAULT 0,
+  `stateID` smallint(6) NOT NULL DEFAULT 0,
+  `countyName` char(50) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+  `altitude` char(1) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+  `GPAFract` float DEFAULT NULL,
+  `barometricPressure` float DEFAULT NULL,
+  `barometricPressureCV` float DEFAULT NULL,
+  `countyTypeID` int(11) DEFAULT NULL,
+  `msa` char(255) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+  PRIMARY KEY (`countyID`,`stateID`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci DELAY_KEY_WRITE=1;
+
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`dayvmtfraction` (
+  `sourceTypeID` smallint(6) NOT NULL DEFAULT 0,
+  `monthID` smallint(6) NOT NULL DEFAULT 0,
+  `roadTypeID` smallint(6) NOT NULL DEFAULT 0,
+  `dayID` smallint(6) NOT NULL DEFAULT 0,
+  `dayVMTFraction` float DEFAULT NULL,
+  PRIMARY KEY (`dayID`,`monthID`,`roadTypeID`,`sourceTypeID`),
+  KEY `sourceTypeID` (`sourceTypeID`),
+  KEY `monthID` (`monthID`),
+  KEY `roadTypeID` (`roadTypeID`),
+  KEY `dayID` (`dayID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`fuelformulation` (
+  `fuelFormulationID` int(11) NOT NULL,
+  `fuelSubtypeID` smallint(6) NOT NULL DEFAULT 0,
+  `RVP` float DEFAULT NULL,
+  `sulfurLevel` float NOT NULL DEFAULT 30,
+  `ETOHVolume` float DEFAULT NULL,
+  `MTBEVolume` float DEFAULT NULL,
+  `ETBEVolume` float DEFAULT NULL,
+  `TAMEVolume` float DEFAULT NULL,
+  `aromaticContent` float DEFAULT NULL,
+  `olefinContent` float DEFAULT NULL,
+  `benzeneContent` float DEFAULT NULL,
+  `e200` float DEFAULT NULL,
+  `e300` float DEFAULT NULL,
+  `volToWtPercentOxy` float DEFAULT NULL,
+  `BioDieselEsterVolume` float DEFAULT NULL,
+  `CetaneIndex` float DEFAULT NULL,
+  `PAHContent` float DEFAULT NULL,
+  `T50` float DEFAULT NULL,
+  `T90` float DEFAULT NULL,
+  PRIMARY KEY (`fuelFormulationID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`fuelsupply` (
+  `fuelRegionID` int(11) NOT NULL DEFAULT 0,
+  `fuelYearID` smallint(6) NOT NULL DEFAULT 0,
+  `monthGroupID` smallint(6) NOT NULL DEFAULT 0,
+  `fuelFormulationID` int(11) NOT NULL,
+  `marketShare` float DEFAULT NULL,
+  `marketShareCV` float DEFAULT NULL,
+  PRIMARY KEY (`fuelRegionID`,`fuelFormulationID`,`monthGroupID`,`fuelYearID`),
+  KEY `fuelRegionID` (`fuelRegionID`),
+  KEY `yearID` (`fuelYearID`),
+  KEY `monthGroupID` (`monthGroupID`),
+  KEY `fuelSubtypeID` (`fuelFormulationID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`fuelusagefraction` (
+  `countyID` int(11) NOT NULL,
+  `fuelYearID` int(11) NOT NULL,
+  `modelYearGroupID` int(11) NOT NULL,
+  `sourceBinFuelTypeID` smallint(6) NOT NULL,
+  `fuelSupplyFuelTypeID` smallint(6) NOT NULL,
+  `usageFraction` double DEFAULT NULL,
+  PRIMARY KEY (`countyID`,`fuelYearID`,`modelYearGroupID`,`sourceBinFuelTypeID`,`fuelSupplyFuelTypeID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`hotellingactivitydistribution` (
+  `zoneID` int(11) NOT NULL,
+  `fuelTypeID` smallint(6) NOT NULL,
+  `beginModelYearID` smallint(6) NOT NULL,
+  `endModelYearID` smallint(6) NOT NULL,
+  `opModeID` smallint(6) NOT NULL,
+  `opModeFraction` float NOT NULL,
+  PRIMARY KEY (`zoneID`,`fuelTypeID`,`beginModelYearID`,`endModelYearID`,`opModeID`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci DELAY_KEY_WRITE=1;
+
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`hotellingagefraction` (
+  `zoneID` int(11) NOT NULL,
+  `ageID` smallint(6) NOT NULL,
+  `ageFraction` double NOT NULL,
+  PRIMARY KEY (`zoneID`,`ageID`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`hotellinghourfraction` (
+  `zoneID` int(11) NOT NULL,
+  `dayID` smallint(6) NOT NULL,
+  `hourID` smallint(6) NOT NULL,
+  `hourFraction` double NOT NULL,
+  PRIMARY KEY (`zoneID`,`dayID`,`hourID`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`hotellinghoursperday` (
+  `yearID` smallint(6) NOT NULL,
+  `zoneID` int(11) NOT NULL,
+  `dayID` smallint(6) NOT NULL,
+  `hotellingHoursPerDay` double NOT NULL,
+  PRIMARY KEY (`yearID`,`zoneID`,`dayID`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`hotellingmonthadjust` (
+  `zoneID` int(11) NOT NULL,
+  `monthID` smallint(6) NOT NULL,
+  `monthAdjustment` double NOT NULL,
+  PRIMARY KEY (`zoneID`,`monthID`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`hourvmtfraction` (
+  `sourceTypeID` smallint(6) NOT NULL DEFAULT 0,
+  `roadTypeID` smallint(6) NOT NULL DEFAULT 0,
+  `dayID` smallint(6) NOT NULL DEFAULT 0,
+  `hourID` smallint(6) NOT NULL DEFAULT 0,
+  `hourVMTFraction` float DEFAULT NULL,
+  PRIMARY KEY (`dayID`,`hourID`,`roadTypeID`,`sourceTypeID`),
+  KEY `sourceTypeID` (`sourceTypeID`),
+  KEY `roadTypeID` (`roadTypeID`),
+  KEY `dayID` (`dayID`),
+  KEY `hourID` (`hourID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`hpmsvtypeday` (
+  `yearID` smallint(6) NOT NULL,
+  `monthID` smallint(6) NOT NULL,
+  `dayID` smallint(6) NOT NULL,
+  `HPMSVtypeID` smallint(6) NOT NULL,
+  `VMT` double NOT NULL,
+  PRIMARY KEY (`yearID`,`monthID`,`dayID`,`HPMSVtypeID`),
+  KEY `HPMSVtypeID` (`HPMSVtypeID`,`yearID`,`monthID`,`dayID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`hpmsvtypeyear` (
+  `HPMSVtypeID` smallint(6) NOT NULL DEFAULT 0,
+  `yearID` smallint(6) NOT NULL DEFAULT 0,
+  `VMTGrowthFactor` double DEFAULT NULL,
+  `HPMSBaseYearVMT` double DEFAULT NULL,
+  PRIMARY KEY (`HPMSVtypeID`,`yearID`),
+  KEY `HPMSVtypeID` (`HPMSVtypeID`),
+  KEY `yearID` (`yearID`),
+  KEY `yearID_2` (`yearID`,`HPMSVtypeID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`idledayadjust` (
+  `sourceTypeID` smallint(6) NOT NULL,
+  `dayID` smallint(6) NOT NULL,
+  `idleDayAdjust` double NOT NULL,
+  PRIMARY KEY (`sourceTypeID`,`dayID`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`idlemodelyeargrouping` (
+  `sourceTypeID` smallint(6) NOT NULL,
+  `minModelYearID` smallint(6) NOT NULL,
+  `maxModelYearID` smallint(6) NOT NULL,
+  `totalIdleFraction` double NOT NULL,
+  PRIMARY KEY (`sourceTypeID`,`minModelYearID`,`maxModelYearID`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`idlemonthadjust` (
+  `sourceTypeID` smallint(6) NOT NULL,
+  `monthID` smallint(6) NOT NULL,
+  `idleMonthAdjust` double NOT NULL,
+  PRIMARY KEY (`sourceTypeID`,`monthID`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`imcoverage` (
+  `polProcessID` int(11) NOT NULL DEFAULT 0,
+  `stateID` smallint(6) NOT NULL DEFAULT 0,
+  `countyID` int(11) NOT NULL DEFAULT 0,
+  `yearID` smallint(6) NOT NULL DEFAULT 0,
+  `sourceTypeID` smallint(6) NOT NULL DEFAULT 0,
+  `fuelTypeID` smallint(6) NOT NULL DEFAULT 0,
+  `IMProgramID` smallint(6) NOT NULL DEFAULT 0,
+  `begModelYearID` smallint(6) NOT NULL DEFAULT 0,
+  `endModelYearID` smallint(6) NOT NULL DEFAULT 0,
+  `inspectFreq` smallint(6) DEFAULT NULL,
+  `testStandardsID` smallint(6) NOT NULL DEFAULT 0,
+  `useIMyn` char(1) NOT NULL DEFAULT 'Y',
+  `complianceFactor` float DEFAULT NULL,
+  PRIMARY KEY (`polProcessID`,`stateID`,`countyID`,`yearID`,`sourceTypeID`,`fuelTypeID`,`IMProgramID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`monthvmtfraction` (
+  `sourceTypeID` smallint(6) NOT NULL DEFAULT 0,
+  `monthID` smallint(6) NOT NULL DEFAULT 0,
+  `monthVMTFraction` float DEFAULT NULL,
+  PRIMARY KEY (`monthID`,`sourceTypeID`),
+  KEY `sourceTypeID` (`sourceTypeID`),
+  KEY `monthID` (`monthID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`onroadretrofit` (
+  `pollutantID` smallint(6) NOT NULL,
+  `processID` smallint(6) NOT NULL,
+  `fuelTypeID` smallint(6) NOT NULL,
+  `sourceTypeID` smallint(6) NOT NULL,
+  `retrofitYearID` smallint(6) NOT NULL,
+  `beginModelYearID` smallint(6) NOT NULL,
+  `endModelYearID` smallint(6) NOT NULL,
+  `cumFractionRetrofit` double NOT NULL DEFAULT 0,
+  `retrofitEffectiveFraction` double NOT NULL DEFAULT 0,
+  PRIMARY KEY (`pollutantID`,`processID`,`fuelTypeID`,`sourceTypeID`,`retrofitYearID`,`beginModelYearID`,`endModelYearID`),
+  KEY `retrofitYearID` (`retrofitYearID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`roadtypedistribution` (
+  `sourceTypeID` smallint(6) NOT NULL DEFAULT 0,
+  `roadTypeID` smallint(6) NOT NULL DEFAULT 0,
+  `roadTypeVMTFraction` float DEFAULT NULL,
+  PRIMARY KEY (`roadTypeID`,`sourceTypeID`),
+  KEY `sourceTypeID` (`sourceTypeID`),
+  KEY `roadTypeID` (`roadTypeID`),
+  KEY `roadTypeID_2` (`roadTypeID`,`sourceTypeID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`sourcetypeagedistribution` (
+  `sourceTypeID` smallint(6) NOT NULL DEFAULT 0,
+  `yearID` smallint(6) NOT NULL DEFAULT 0,
+  `ageID` smallint(6) NOT NULL DEFAULT 0,
+  `ageFraction` double DEFAULT NULL,
+  PRIMARY KEY (`ageID`,`sourceTypeID`,`yearID`),
+  KEY `sourceTypeID` (`sourceTypeID`),
+  KEY `yearID` (`yearID`),
+  KEY `ageID` (`ageID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`sourcetypedayvmt` (
+  `yearID` smallint(6) NOT NULL,
+  `monthID` smallint(6) NOT NULL,
+  `dayID` smallint(6) NOT NULL,
+  `sourceTypeID` smallint(6) NOT NULL,
+  `VMT` double NOT NULL,
+  PRIMARY KEY (`yearID`,`monthID`,`dayID`,`sourceTypeID`),
+  KEY `sourceTypeID` (`sourceTypeID`,`yearID`,`monthID`,`dayID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`sourcetypeyear` (
+  `yearID` smallint(6) NOT NULL DEFAULT 0,
+  `sourceTypeID` smallint(6) NOT NULL DEFAULT 0,
+  `salesGrowthFactor` double DEFAULT NULL,
+  `sourceTypePopulation` double DEFAULT NULL,
+  `migrationrate` double DEFAULT NULL,
+  PRIMARY KEY (`sourceTypeID`,`yearID`),
+  KEY `yearID` (`yearID`),
+  KEY `sourceTypeID` (`sourceTypeID`),
+  KEY `sourceTypeID_2` (`sourceTypeID`,`yearID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`sourcetypeyearvmt` (
+  `yearID` smallint(6) NOT NULL,
+  `sourceTypeID` smallint(6) NOT NULL,
+  `VMT` double NOT NULL,
+  PRIMARY KEY (`yearID`,`sourceTypeID`),
+  KEY `sourceTypeID` (`sourceTypeID`,`yearID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`starts` (
+  `hourDayID` smallint(6) NOT NULL DEFAULT 0,
+  `monthID` smallint(6) NOT NULL DEFAULT 0,
+  `yearID` smallint(6) NOT NULL DEFAULT 0,
+  `ageID` smallint(6) NOT NULL DEFAULT 0,
+  `zoneID` int(11) NOT NULL DEFAULT 0,
+  `sourceTypeID` smallint(6) NOT NULL DEFAULT 0,
+  `starts` float DEFAULT NULL,
+  `StartsCV` float DEFAULT NULL,
+  `isUserInput` char(1) NOT NULL DEFAULT 'N',
+  PRIMARY KEY (`ageID`,`hourDayID`,`monthID`,`sourceTypeID`,`yearID`,`zoneID`),
+  KEY `hourDayID` (`hourDayID`),
+  KEY `monthID` (`monthID`),
+  KEY `yearID` (`yearID`),
+  KEY `ageID` (`ageID`),
+  KEY `zoneID` (`zoneID`),
+  KEY `sourceTypeID` (`sourceTypeID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`startsageadjustment` (
+  `sourceTypeID` smallint(6) NOT NULL DEFAULT 0,
+  `ageID` smallint(6) NOT NULL DEFAULT 0,
+  `ageAdjustment` double DEFAULT NULL,
+  PRIMARY KEY (`sourceTypeID`,`ageID`),
+  KEY `sourceTypeID` (`sourceTypeID`),
+  KEY `ageID` (`ageID`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`startshourfraction` (
+  `dayID` smallint(6) NOT NULL,
+  `hourID` smallint(6) NOT NULL,
+  `sourceTypeID` smallint(6) NOT NULL DEFAULT 0,
+  `allocationFraction` double NOT NULL,
+  PRIMARY KEY (`dayID`,`hourID`,`sourceTypeID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`startsmonthadjust` (
+  `monthID` smallint(6) NOT NULL,
+  `sourceTypeID` smallint(6) NOT NULL DEFAULT 0,
+  `monthAdjustment` double NOT NULL,
+  PRIMARY KEY (`monthID`,`sourceTypeID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`startsopmodedistribution` (
+  `dayID` smallint(6) NOT NULL DEFAULT 0,
+  `hourID` smallint(6) NOT NULL DEFAULT 0,
+  `sourceTypeID` smallint(6) NOT NULL DEFAULT 0,
+  `ageID` smallint(6) NOT NULL DEFAULT 0,
+  `opModeID` smallint(6) NOT NULL DEFAULT 0,
+  `opModeFraction` double DEFAULT NULL,
+  `isUserInput` char(1) NOT NULL DEFAULT 'N',
+  PRIMARY KEY (`dayID`,`hourID`,`sourceTypeID`,`ageID`,`opModeID`),
+  KEY `dayID` (`dayID`),
+  KEY `hourid` (`hourID`),
+  KEY `sourceTypeID` (`sourceTypeID`),
+  KEY `ageID` (`ageID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`startsperday` (
+  `dayID` smallint(6) NOT NULL DEFAULT 0,
+  `sourceTypeID` smallint(6) NOT NULL DEFAULT 0,
+  `startsPerDay` double DEFAULT NULL,
+  PRIMARY KEY (`sourceTypeID`,`dayID`),
+  KEY `hourDayID` (`dayID`),
+  KEY `sourceTypeID` (`sourceTypeID`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`startsperdaypervehicle` (
+  `dayID` smallint(6) NOT NULL DEFAULT 0,
+  `sourceTypeID` smallint(6) NOT NULL DEFAULT 0,
+  `startsPerDayPerVehicle` double DEFAULT NULL,
+  PRIMARY KEY (`sourceTypeID`,`dayID`),
+  KEY `hourDayID` (`dayID`),
+  KEY `sourceTypeID` (`sourceTypeID`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`state` (
+  `stateID` smallint(6) NOT NULL DEFAULT 0,
+  `stateName` char(25) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+  `stateAbbr` char(2) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+  `idleRegionID` int(11) DEFAULT NULL,
+  PRIMARY KEY (`stateID`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`totalidlefraction` (
+  `sourceTypeID` int(11) NOT NULL,
+  `minModelYearID` int(11) NOT NULL,
+  `maxModelYearID` int(11) NOT NULL,
+  `monthID` int(11) NOT NULL,
+  `dayID` int(11) NOT NULL,
+  `idleRegionID` int(11) NOT NULL,
+  `countyTypeID` int(11) NOT NULL,
+  `totalIdleFraction` double DEFAULT NULL,
+  PRIMARY KEY (`sourceTypeID`,`minModelYearID`,`maxModelYearID`,`monthID`,`dayID`,`idleRegionID`,`countyTypeID`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`year` (
+  `yearID` smallint(6) NOT NULL DEFAULT 0,
+  `isBaseYear` char(1) DEFAULT NULL,
+  `fuelYearID` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`yearID`),
+  KEY `isBaseYear` (`isBaseYear`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`zone` (
+  `zoneID` int(11) NOT NULL DEFAULT 0,
+  `countyID` int(11) NOT NULL DEFAULT 0,
+  `startAllocFactor` double DEFAULT NULL,
+  `idleAllocFactor` double DEFAULT NULL,
+  `SHPAllocFactor` double DEFAULT NULL,
+  PRIMARY KEY (`zoneID`),
+  KEY `countyID` (`countyID`),
+  KEY `zoneID` (`zoneID`,`countyID`),
+  KEY `countyID_2` (`countyID`,`zoneID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`zonemonthhour` (
+  `monthID` smallint(6) NOT NULL DEFAULT 0,
+  `zoneID` int(11) NOT NULL DEFAULT 0,
+  `hourID` smallint(6) NOT NULL DEFAULT 0,
+  `temperature` double DEFAULT NULL,
+  `relHumidity` double DEFAULT NULL,
+  `heatIndex` double DEFAULT NULL,
+  `specificHumidity` double DEFAULT NULL,
+  `molWaterFraction` double DEFAULT NULL,
+  PRIMARY KEY (`hourID`,`monthID`,`zoneID`),
+  KEY `monthID` (`monthID`),
+  KEY `zoneID` (`zoneID`),
+  KEY `hourID` (`hourID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+CREATE TABLE IF NOT EXISTS `uc26_o3_m4_SIP_in`.`zoneroadtype` (
+  `zoneID` int(11) NOT NULL DEFAULT 0,
+  `roadTypeID` smallint(6) NOT NULL DEFAULT 0,
+  `SHOAllocFactor` double DEFAULT NULL,
+  PRIMARY KEY (`roadTypeID`,`zoneID`),
+  KEY `roadTypeID` (`roadTypeID`,`zoneID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci DELAY_KEY_WRITE=1;
+
+
+
+
+
