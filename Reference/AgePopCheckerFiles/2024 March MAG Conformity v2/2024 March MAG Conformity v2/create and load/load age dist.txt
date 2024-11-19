@@ -1,0 +1,36 @@
+
+delete FROM 2028_utah_jul_m4_cdm33_pm10.sourcetypeagedistribution;
+delete FROM 2030_utah_jul_m4_cdm33_pm10.sourcetypeagedistribution;
+delete FROM 2032_utah_jul_m4_cdm33_pm10.sourcetypeagedistribution;
+delete FROM 2042_utah_jul_m4_cdm33_pm10.sourcetypeagedistribution;
+delete FROM 2050_utah_jul_m4_cdm33_pm10.sourcetypeagedistribution;
+
+insert into 2028_utah_jul_m4_cdm33_pm10.sourcetypeagedistribution
+SELECT sourcetypeid, yearid, ageid, agefraction  
+FROM moves4_cdm_basefiles_33.sourcetypeagedistribution_conformity_4
+where countyid = 49049
+and yearid = 2028;
+
+insert into 2030_utah_jul_m4_cdm33_pm10.sourcetypeagedistribution
+SELECT sourcetypeid, yearid, ageid, agefraction 
+FROM moves4_cdm_basefiles_33.sourcetypeagedistribution_conformity_4
+where countyid = 49049
+and yearid = 2030;
+
+insert into 2032_utah_jul_m4_cdm33_pm10.sourcetypeagedistribution
+SELECT sourcetypeid, yearid, ageid, agefraction 
+FROM moves4_cdm_basefiles_33.sourcetypeagedistribution_conformity_4
+where countyid = 49049
+and yearid = 2032;
+
+insert into 2042_utah_jul_m4_cdm33_pm10.sourcetypeagedistribution
+SELECT sourcetypeid, yearid, ageid, agefraction 
+FROM moves4_cdm_basefiles_33.sourcetypeagedistribution_conformity_4
+where countyid = 49049
+and yearid = 2042;
+
+insert into 2050_utah_jul_m4_cdm33_pm10.sourcetypeagedistribution
+SELECT sourcetypeid, yearid, ageid, agefraction 
+FROM moves4_cdm_basefiles_33.sourcetypeagedistribution_conformity_4
+where countyid = 49049
+and yearid = 2050;

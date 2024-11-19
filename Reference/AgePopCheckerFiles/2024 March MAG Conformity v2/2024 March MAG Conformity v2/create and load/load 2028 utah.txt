@@ -1,0 +1,89 @@
+#2028_utah_jul_m4_cdm33_o3
+#49049
+
+
+
+delete from 2028_utah_jul_m4_cdm33_o3.avft;
+delete from 2028_utah_jul_m4_cdm33_o3.auditlog;
+delete from 2028_utah_jul_m4_cdm33_o3.county;
+delete from 2028_utah_jul_m4_cdm33_o3.fuelformulation;
+delete from 2028_utah_jul_m4_cdm33_o3.fuelsupply;
+delete from 2028_utah_jul_m4_cdm33_o3.fuelusagefraction;
+delete from 2028_utah_jul_m4_cdm33_o3.imcoverage;
+delete from 2028_utah_jul_m4_cdm33_o3.sourcetypeyear;
+delete from 2028_utah_jul_m4_cdm33_o3.sourcetypeagedistribution;
+delete from 2028_utah_jul_m4_cdm33_o3.state;
+delete from 2028_utah_jul_m4_cdm33_o3.year;
+delete from 2028_utah_jul_m4_cdm33_o3.zonemonthhour;
+delete from 2028_utah_jul_m4_cdm33_o3.zone;
+delete from 2028_utah_jul_m4_cdm33_o3.zoneroadtype;
+
+
+#rural county no I/M flag
+#insert into  2028_utah_jul_m4_cdm33_o3.auditlog VALUES ('2024-01-25 11:51:14', 'I/M Programs Flag','No data needed','');
+
+insert into 2028_utah_jul_m4_cdm33_o3.avft
+select sourcetypeid, modelyearid, fueltypeid, engtechid, fuelengfraction 
+from moves4_cdm_basefiles_33.avft_2022_adj_4_pro
+where countyid = 49049;
+
+
+#insert into 2028_utah_jul_m4_cdm33_o3.avft
+#SELECT * FROM moves4_cdm_basefiles_33.avft_4
+#where sourcetypeid not in (21,31,32);
+
+insert into 2028_utah_jul_m4_cdm33_o3.county
+SELECT * FROM movesdb20240104.county
+where countyid = 49049;
+
+insert into 2028_utah_jul_m4_cdm33_o3.fuelformulation
+select * from movesdb20240104.fuelformulation;
+
+insert into 2028_utah_jul_m4_cdm33_o3.fuelsupply
+select * from  movesdb20240104.fuelsupply
+where fuelregionid = 500000000 and
+fuelyearid = 2028;
+
+insert into 2028_utah_jul_m4_cdm33_o3.fuelusagefraction
+SELECT * FROM moves4_cdm_basefiles_33.movesdb20230615_fuelusagefraction 
+where countyid = 49049
+and fuelyearid = 2028;
+
+insert into 2028_utah_jul_m4_cdm33_o3.imcoverage
+select * from moves4_cdm_basefiles_33.simcoverage_101023
+where countyid = 49049 and yearid = 2028;
+
+insert into 2028_utah_jul_m4_cdm33_o3.sourcetypeyear
+SELECT yearid, sourcetypeid, null, pop, null 
+FROM moves4_cdm_basefiles_33.sourcetypepopulation_2022_4
+where countyid = 49049 and yearid = 2028;
+
+#insert into 2028_utah_jul_m4_cdm33_o3.sourcetypeagedistribution
+#SELECT sourcetypeid, yearid, ageid, agefraction 
+#FROM moves4_cdm_basefiles_33.sourcetypeagedistribution_2028_4
+#where countyid = 49049
+#and yearid = 2028;
+
+
+insert into 2028_utah_jul_m4_cdm33_o3.state
+SELECT * FROM movesdb20240104.state
+where stateid = 49;
+
+
+insert into 2028_utah_jul_m4_cdm33_o3.year
+SELECT * FROM movesdb20240104.year
+where yearid = 2028;
+
+insert into 2028_utah_jul_m4_cdm33_o3.zonemonthhour
+SELECT * FROM moves4_cdm_basefiles_33.zonemonthhour_2020_july_4
+where zoneid = 490490;
+
+insert into  2028_utah_jul_m4_cdm33_o3.zone VALUES ('490490', '49049','1','1','1');
+
+
+insert into 2028_utah_jul_m4_cdm33_o3.zoneroadtype VALUES('490490','2','1');
+insert into 2028_utah_jul_m4_cdm33_o3.zoneroadtype VALUES('490490','3','1');
+insert into 2028_utah_jul_m4_cdm33_o3.zoneroadtype VALUES('490490','4','1');
+insert into 2028_utah_jul_m4_cdm33_o3.zoneroadtype VALUES('490490','5','1');
+
+

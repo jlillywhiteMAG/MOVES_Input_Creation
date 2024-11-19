@@ -1,0 +1,38 @@
+
+delete from 2028_utah_jul_m4_cdm33_pm10.sourcetypeagedistribution
+where sourcetypeid in (53,62);
+
+delete from 2030_utah_jul_m4_cdm33_pm10.sourcetypeagedistribution
+where sourcetypeid in (53,62);
+
+delete from 2032_utah_jul_m4_cdm33_pm10.sourcetypeagedistribution
+where sourcetypeid in (53,62);
+
+delete from 2042_utah_jul_m4_cdm33_pm10.sourcetypeagedistribution
+where sourcetypeid in (53,62);
+
+delete from 2050_utah_jul_m4_cdm33_pm10.sourcetypeagedistribution
+where sourcetypeid in (53,62);
+
+
+insert into 2028_utah_jul_m4_cdm33_pm10.sourcetypeagedistribution
+SELECT * FROM moves4_cdm_basefiles_33.sourcetypeagedistribution_4
+where sourcetypeid in (53,62) and yearid = 2028;
+
+insert into 2030_utah_jul_m4_cdm33_pm10.sourcetypeagedistribution
+SELECT * FROM moves4_cdm_basefiles_33.sourcetypeagedistribution_4
+where sourcetypeid in (53,62) and yearid = 2030;
+
+insert into 2032_utah_jul_m4_cdm33_pm10.sourcetypeagedistribution
+SELECT * FROM moves4_cdm_basefiles_33.sourcetypeagedistribution_4
+where sourcetypeid in (53,62) and yearid = 2032;
+
+insert into 2042_utah_jul_m4_cdm33_pm10.sourcetypeagedistribution
+SELECT * FROM moves4_cdm_basefiles_33.sourcetypeagedistribution_4
+where sourcetypeid in (53,62) and yearid = 2042;
+
+insert into 2050_utah_jul_m4_cdm33_pm10.sourcetypeagedistribution
+SELECT * FROM moves4_cdm_basefiles_33.sourcetypeagedistribution_4
+where sourcetypeid in (53,62) and yearid = 2050;
+
+

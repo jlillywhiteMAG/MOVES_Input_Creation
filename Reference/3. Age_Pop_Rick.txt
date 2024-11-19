@@ -19,7 +19,7 @@
 delete from rtp24_2050_pm25_m4_in.sourcetypeagedistribution;
 
 # inserts Utah DMV data from 2017 for all vehicles except 53 and 62
-insert into rtp24_2050_pm25_m4_in.sourcetypeagedistribution
+insert into rtp24_2050_fpm25_m4_in.sourcetypeagedistribution
 SELECT sourcetypeid, yearid, ageid, agefraction 
 FROM moves4_cdm_basefiles_33.sourcetypeagedistribution_4
 where yearid = 2050
